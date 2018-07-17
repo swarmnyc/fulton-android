@@ -1,10 +1,11 @@
 package com.swarmnyc.fulton.android
 
+import com.swarmnyc.fulton.android.impl.FultonContextImpl
 import java.lang.reflect.Type
 import java.util.concurrent.atomic.AtomicReference
 
 object Fulton {
-    private val contextRef: AtomicReference<FultonContext> = AtomicReference()
+    private val contextRef: AtomicReference<FultonContext> = AtomicReference(FultonContextImpl())
 
     var context: FultonContext
         get() = contextRef.get()
@@ -13,10 +14,10 @@ object Fulton {
         }
 }
 
-
 interface FultonContext {
     var defaultCacheDuration: Int
     var cacheManagement: CacheManagement
+    val requestTimeOut: Int
 }
 
 interface CacheManagement {
@@ -27,10 +28,3 @@ interface CacheManagement {
     fun clean(api: String)
 }
 
-class FultonContextImpl : FultonContext {
-    override var defaultCacheDuration: Int = 300
-
-    override var cacheManagement: CacheManagement
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-        set(value) {}
-}

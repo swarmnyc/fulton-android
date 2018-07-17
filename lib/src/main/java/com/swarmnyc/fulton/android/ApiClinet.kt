@@ -2,6 +2,7 @@ package com.swarmnyc.fulton.android
 
 import android.util.Log
 import com.github.kittinunf.fuel.core.*
+import com.github.kittinunf.result.Result
 import com.swarmnyc.fulton.android.util.fromJson
 import com.swarmnyc.fulton.android.util.promise
 import com.swarmnyc.fulton.android.util.toJson
@@ -91,52 +92,57 @@ abstract class ApiClient {
                 val cacheResult = Fulton.context.cacheManagement.get<T>(options.url, options.dataType)
                 if (cacheResult != null) {
                     // cache hits
-
                     it.resolve(cacheResult)
 
                     return@promise
                 }
             }
 
-            val req = FuelManager.instance.request(options.method, options.url)
-            if (options.body != null) {
-                req.body(options.body.toJson())
-            }
+            startRequest(it, options)
+        }
+    }
 
-            initRequest(req)
+    protected open fun <T> startRequest(promise: Deferred<T?, Throwable>, options: RequestOptions) {
+        val req = FuelManager.instance.request(options.method, options.url)
+        if (options.body != null) {
+            req.body(options.body.toJson())
+        }
 
-            if (Log.isLoggable(TAG, Log.DEBUG)){
-                Log.d(TAG, "--> ${req.method} (${req.url})\n$req")
-            }
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "--> ${req.method} (${req.url})\n$req")
+        }
 
-            req.response { _, res, result ->
-                if (Log.isLoggable(TAG, Log.DEBUG)){
-                    val time = (System.currentTimeMillis() - options.startedAt)
-                    val msg = buildString {
-                        appendln("<-- ${res.statusCode} (${res.url})")
-                        appendln("Time Spent : $time")
-                        appendln("Response : ${res.responseMessage}")
-                        appendln("Length : ${res.contentLength}")
-                        appendln("Headers : (${res.headers.size})")
-                        for ((key, value) in res.headers) {
-                            appendln("$key : $value")
-                        }
-                        appendln("Body : ${if (res.data.isNotEmpty()) String(res.data) else "(empty)"}")
-                    }
+        req.timeout(options.timeOut).response { _, res, result ->
+            handleResponse(promise, options, req, res, result)
+        }
+    }
 
-                    Log.d(TAG, msg)
+    protected open fun <T> handleResponse(promise: Deferred<T?, Throwable>, options: RequestOptions, req: Request, res: Response, result: Result<ByteArray, FuelError>) {
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            val time = (System.currentTimeMillis() - options.startedAt)
+            val msg = buildString {
+                appendln("<-- ${res.statusCode} (${res.url})")
+                appendln("Time Spent : $time")
+                appendln("Response : ${res.responseMessage}")
+                appendln("Length : ${res.contentLength}")
+                appendln("Headers : (${res.headers.size})")
+                for ((key, value) in res.headers) {
+                    appendln("$key : $value")
                 }
-
-                if (res.statusCode < 400) {
-                    try {
-                        handleSuccess(it, options, res, result.get())
-                    } catch (e: Throwable) {
-                        it.reject(e)
-                    }
-                } else {
-                    handelError(it, options, res, result.component2()!!)
-                }
+                appendln("Body : ${if (res.data.isNotEmpty()) String(res.data) else "(empty)"}")
             }
+
+            Log.d(TAG, msg)
+        }
+
+        if (res.statusCode < 400) {
+            try {
+                handleSuccess(promise, options, res, result.get())
+            } catch (e: Throwable) {
+                promise.reject(e)
+            }
+        } else {
+            handelError(promise, options, res, result.component2()!!)
         }
     }
 
@@ -176,6 +182,7 @@ abstract class ApiClient {
     }
 
     protected open fun <T> handelError(promise: Deferred<T?, Throwable>, options: RequestOptions, res: Response, error: FuelError) {
+        //TODO: global error handler
         promise.reject(error)
     }
 

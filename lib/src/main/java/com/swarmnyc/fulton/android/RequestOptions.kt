@@ -5,4 +5,5 @@ import java.lang.reflect.Type
 
 data class RequestOptions(val method: Method, val url: String, val dataType: Type, val body: Any?, val cacheDuration: Int) {
     val startedAt = System.currentTimeMillis()
+    var timeOut = Fulton.context.requestTimeOut
 }

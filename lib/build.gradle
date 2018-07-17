@@ -1,13 +1,14 @@
 apply plugin: 'com.android.library'
 
+apply plugin: 'kotlin-android'
+
+
 android {
-    compileSdkVersion 27
-
-
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
 
@@ -26,9 +27,11 @@ android {
 
 dependencies {
     testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'io.mockk:mockk-android:1.8.5'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$versions.kotlin"
     implementation 'com.github.kittinunf.fuel:fuel-android:1.12.0'
     implementation 'com.google.code.gson:gson:2.8.2'
     implementation 'joda-time:joda-time:2.3'
