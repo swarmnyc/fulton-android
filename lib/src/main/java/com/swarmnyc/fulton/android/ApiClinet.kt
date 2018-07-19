@@ -4,19 +4,22 @@ import android.util.Log
 import com.github.kittinunf.fuel.core.*
 import com.github.kittinunf.result.Result
 import com.swarmnyc.fulton.android.util.fromJson
-import com.swarmnyc.fulton.android.util.promise
 import com.swarmnyc.fulton.android.util.toJson
 import com.swarmnyc.fulton.android.util.urlEncode
 import nl.komponents.kovenant.Deferred
 import nl.komponents.kovenant.Promise
+import nl.komponents.kovenant.deferred
 import java.lang.reflect.Type
 import java.net.URI
+
+typealias ApiPromise<T> = Promise<T, ApiError>
+
+typealias ApiDeferred<T> = Deferred<T, ApiError>
 
 /**
  * Base Api Client, supports
  * - error handle
  * - async
- * - queue
  * - cache
  * */
 abstract class ApiClient {
@@ -69,7 +72,7 @@ abstract class ApiClient {
      * Only GET will be cached
      * @param cache cache is minute, if it is 0 means no cache
      * */
-    protected inline fun <reified T : Any> request(method: Method, url: String, body: Any? = null, cache: Int = Fulton.context.defaultCacheDuration): Promise<T?, Throwable> {
+    protected inline fun <reified T : Any> request(method: Method, url: String, body: Any? = null, cache: Int = Fulton.context.defaultCacheDuration): ApiPromise<T> {
         return request(RequestOptions(method, url, T::class.java, body, cache))
     }
 
@@ -82,27 +85,31 @@ abstract class ApiClient {
      * Only GET will be cached
      * @param cache cache is minute, if it is 0 means no cache
      * */
-    protected fun <T : Any> request(method: Method, url: String, type: Type, body: Any? = null, cache: Int = Fulton.context.defaultCacheDuration): Promise<T?, Throwable> {
+    protected fun <T : Any> request(method: Method, url: String, type: Type, body: Any? = null, cache: Int = Fulton.context.defaultCacheDuration): ApiPromise<T> {
         return request(RequestOptions(method, url, type, body, cache))
     }
 
-    protected fun <T : Any> request(options: RequestOptions): Promise<T?, Throwable> {
-        return promise {
+    protected fun <T : Any> request(options: RequestOptions): ApiPromise<T> {
+        val promise = deferred<T, ApiError>()
+
+        promise.promise.context.workerContext.offer {
             if (options.method == Method.GET && options.cacheDuration > NO_CACHE) {
                 val cacheResult = Fulton.context.cacheManagement.get<T>(options.url, options.dataType)
                 if (cacheResult != null) {
                     // cache hits
-                    it.resolve(cacheResult)
+                    promise.resolve(cacheResult)
 
-                    return@promise
+                    return@offer
                 }
             }
 
-            startRequest(it, options)
+            startRequest(promise, options)
         }
+
+        return promise.promise
     }
 
-    protected open fun <T> startRequest(promise: Deferred<T?, Throwable>, options: RequestOptions) {
+    protected open fun <T> startRequest(promise: ApiDeferred<T>, options: RequestOptions) {
         val req = FuelManager.instance.request(options.method, options.url)
         if (options.body != null) {
             req.body(options.body.toJson())
@@ -117,7 +124,7 @@ abstract class ApiClient {
         }
     }
 
-    protected open fun <T> handleResponse(promise: Deferred<T?, Throwable>, options: RequestOptions, req: Request, res: Response, result: Result<ByteArray, FuelError>) {
+    protected open fun <T> handleResponse(promise: ApiDeferred<T>, options: RequestOptions, req: Request, res: Response, result: Result<ByteArray, FuelError>) {
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             val time = (System.currentTimeMillis() - options.startedAt)
             val msg = buildString {
@@ -139,19 +146,19 @@ abstract class ApiClient {
             try {
                 handleSuccess(promise, options, res, result.get())
             } catch (e: Throwable) {
-                promise.reject(e)
+                handelError(promise, req, res, result.component2()!!)
             }
         } else {
-            handelError(promise, options, res, result.component2()!!)
+            handelError(promise, req, res, result.component2()!!)
         }
     }
 
-    protected open fun <T> handleSuccess(promise: Deferred<T?, Throwable>, options: RequestOptions, res: Response, bytes: ByteArray) {
+    protected open fun <T> handleSuccess(promise: ApiDeferred<T>, options: RequestOptions, res: Response, bytes: ByteArray) {
         var result: T? = null
         var shouldCache = options.method == Method.GET && options.cacheDuration > NO_CACHE
 
         when (options.dataType) {
-            Unit::class.java -> {
+            Unit::class.java, Nothing::class.java -> {
                 @Suppress("UNCHECKED_CAST")
                 result = Unit as T
                 shouldCache = false
@@ -181,16 +188,25 @@ abstract class ApiClient {
         }
     }
 
-    protected open fun <T> handelError(promise: Deferred<T?, Throwable>, options: RequestOptions, res: Response, error: FuelError) {
-        //TODO: global error handler
-        promise.reject(error)
+    protected open fun <T> handelError(promise: ApiDeferred<T>, req: Request, res: Response, error: FuelError) {
+        val apiError = ApiError(req, res, error.exception)
+
+        try {
+            promise.promise.fail {
+                Fulton.context.errorHandler.onError(apiError)
+            }
+
+            promise.reject(apiError)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error Handle failed", e)
+        }
     }
 
     protected open fun cacheData(url: String, cache: Int, byteArray: ByteArray) {
         Fulton.context.cacheManagement.add(this.javaClass.simpleName, url, cache, byteArray)
     }
 
-    protected open fun cleanCache() {
+    open fun cleanCache() {
         Fulton.context.cacheManagement.clean(this.javaClass.simpleName)
     }
 }
