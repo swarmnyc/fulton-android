@@ -1,6 +1,5 @@
 package com.swarmnyc.fulton.android
 
-import android.net.Uri
 import android.support.test.runner.AndroidJUnit4
 import android.util.Log
 import com.github.kittinunf.fuel.core.FuelError
@@ -9,28 +8,28 @@ import com.github.kittinunf.fuel.core.Request
 import com.github.kittinunf.fuel.core.Response
 import com.github.kittinunf.result.Result
 import com.swarmnyc.fulton.android.util.await
+import com.swarmnyc.fulton.android.util.toJson
 import io.mockk.mockk
-import nl.komponents.kovenant.Deferred
-import nl.komponents.kovenant.Promise
-import nl.komponents.kovenant.deferred
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
+import nl.komponents.kovenant.*
+import org.junit.Assert.*
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.net.URL
 import java.util.concurrent.CountDownLatch
 
 
+const val UrlRoot = "http://api.fulton.com"
+
 @RunWith(AndroidJUnit4::class)
-class ApiClientInstrumentedTest {
+class ApiClientTest {
     companion object {
-        val TAG = ApiClientInstrumentedTest::class.java.simpleName
+        val TAG = ApiClientTest::class.java.simpleName!!
     }
 
     @Test
-    fun treadTest(){
+    fun treadTest() {
         // there will create 3 thread, 1. main thread, 2. promise body thread 3. result(success, fail, always) thread
-
         val mainThread = Thread.currentThread().id
         val promise = deferred<Unit, Throwable>()
         Log.d(TAG, "Main Thread Id : ${Thread.currentThread().id}")
@@ -54,34 +53,14 @@ class ApiClientInstrumentedTest {
     }
 
     @Test
-    fun buildUrlTest() {
-        val apiClient = object : ApiClient() {
-            override val apiUrl: String = "http://api.fulton.com"
-
-            public override fun buildUrl(path: String, queryString: Map<String, Any?>?): String {
-                return super.buildUrl(path, queryString)
-            }
-
-            public override fun buildUrl(paths: List<String>?, queryString: Map<String, Any?>?): String {
-                return super.buildUrl(paths, queryString)
-            }
-        }
-
-        assertEquals("http://api.fulton.com/news", apiClient.buildUrl("news"))
-        assertEquals("http://api.fulton.com/news", apiClient.buildUrl("/news"))
-
-        assertEquals("http://api.fulton.com/news/id", apiClient.buildUrl(listOf("news", "id")))
-
-        assertEquals("http://api.fulton.com/news?k1=a&k2=2&k3=%26", apiClient.buildUrl("news", mapOf("k1" to "a", "k2" to 2, "k3" to "&")))
-    }
-
-    @Test
     fun requestSuccessUnitTest() {
         val apiClient = object : ApiClient() {
-            override val apiUrl: String = "http://api.fulton.com"
+            override val urlRoot: String = UrlRoot
 
             fun get(): Promise<Unit?, ApiError> {
-                return request(Method.GET, buildUrl(), cache = 1)
+                return request {
+
+                }
             }
 
             override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
@@ -101,10 +80,12 @@ class ApiClientInstrumentedTest {
     @Test
     fun requestSuccessStringTest() {
         val apiClient = object : ApiClient() {
-            override val apiUrl: String = "http://api.fulton.com"
+            override val urlRoot: String = UrlRoot
 
             fun get(): Promise<String?, ApiError> {
-                return request(Method.GET, buildUrl(), cache = 1)
+                return request {
+
+                }
             }
 
             override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
@@ -124,10 +105,12 @@ class ApiClientInstrumentedTest {
     @Test
     fun requestErrorTest() {
         val apiClient = object : ApiClient() {
-            override val apiUrl: String = "http://api.fulton.com"
+            override val urlRoot: String = UrlRoot
 
             fun get(): Promise<String?, ApiError> {
-                return request(Method.GET, buildUrl(), cache = 1)
+                return request {
+
+                }
             }
 
             override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
@@ -143,6 +126,7 @@ class ApiClientInstrumentedTest {
         apiClient.get()
                 .fail {
                     result = it.cause?.message
+                    it.isHandled = true
                 }.await()
 
         assertEquals("TEST", result)
@@ -151,16 +135,71 @@ class ApiClientInstrumentedTest {
 
     @Test
     fun requestJoinTest() {
-        // TODO
+        val apiClient = object : ApiClient() {
+            override val urlRoot: String = UrlRoot
+
+            fun method1(): Promise<String, ApiError> {
+                return request {}
+            }
+
+            fun method2(value: String): Promise<Int, ApiError> {
+                return request {}
+            }
+
+            override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
+                val req = mockk<Request>()
+                val res = Response(URL(options.url), 200)
+                val result = Result.Success<ByteArray, FuelError>("1234".toByteArray())
+
+                handleResponse(promise, options, req, res, result)
+            }
+        }
+
+
+        val result: Int = apiClient.method1().then { apiClient.method2(it) }.await()!!
+
+        assertEquals(1234, result)
+    }
+
+    @Test()
+    fun dataTypeTest() {
+        val json = listOf(ModelA("A", 1, listOf(ModelB("AB", 1))), ModelA("B", 2, listOf())).toJson()
+        val apiClient = object : ApiClient() {
+            override val urlRoot: String = UrlRoot
+
+            fun method1(): ApiPromise<List<ModelA>> {
+                return request {
+                    method = Method.GET
+                    paths = listOf("list")
+                    subDataType = listOf(ModelA::class.java)
+                }
+            }
+
+            override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
+                val req = mockk<Request>()
+                val res = Response(URL(options.url), 200)
+                val result = Result.Success<ByteArray, FuelError>(json.toByteArray())
+
+                handleResponse(promise, options, req, res, result)
+            }
+        }
+
+        val result = apiClient.method1().await()!!
+
+        assertEquals(2, result.size)
+        assertEquals("A", result[0].name)
+        assertEquals(1, result[0].list.size)
+        assertEquals("AB", result[0].list[0].name)
+        assertEquals("B", result[1].name)
     }
 
     @Test
     fun errorHandleTest() {
         val apiClient = object : ApiClient() {
-            override val apiUrl: String = "http://api.fulton.com"
+            override val urlRoot: String = UrlRoot
 
             fun get(): Promise<String?, ApiError> {
-                return request(Method.GET, buildUrl(), cache = 1)
+                return request {}
             }
 
             override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
@@ -194,3 +233,7 @@ class ApiClientInstrumentedTest {
         assertEquals(true, result)
     }
 }
+
+data class ModelA(val name: String, val index: Int, val list: List<ModelB>)
+
+data class ModelB(val name: String, val index: Int)

@@ -5,16 +5,42 @@ import com.github.kittinunf.fuel.core.*
 import com.github.kittinunf.result.Result
 import com.swarmnyc.fulton.android.util.fromJson
 import com.swarmnyc.fulton.android.util.toJson
-import com.swarmnyc.fulton.android.util.urlEncode
 import nl.komponents.kovenant.Deferred
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
-import java.lang.reflect.Type
-import java.net.URI
+import nl.komponents.kovenant.thenApply
 
 typealias ApiPromise<T> = Promise<T, ApiError>
 
 typealias ApiDeferred<T> = Deferred<T, ApiError>
+
+infix fun <V, R> ApiPromise<V>.then(bind: (V) -> ApiPromise<R>): ApiPromise<R> {
+    val deferred = deferred<R, ApiError>(context)
+    success {
+        try {
+            bind(it).success(deferred::resolve).fail(deferred::reject)
+        } catch (e: Exception) {
+            deferred.reject(ApiError(e))
+        }
+    }.fail(deferred::reject)
+
+    deferred.promise.thenApply { }
+
+    return deferred.promise
+}
+
+inline infix fun <V, R> ApiPromise<V>.thenApply(crossinline bind: V.() -> ApiPromise<R>): ApiPromise<R> {
+    val deferred = deferred<R, ApiError>(context)
+    success {
+        try {
+            bind(it).success(deferred::resolve).fail(deferred::reject)
+        } catch (e: Exception) {
+            deferred.reject(ApiError(e))
+        }
+    }.fail(deferred::reject)
+
+    return deferred.promise
+}
 
 /**
  * Base Api Client, supports
@@ -28,7 +54,7 @@ abstract class ApiClient {
         const val NO_CACHE = 0
     }
 
-    protected abstract val apiUrl: String
+    protected abstract val urlRoot: String
 
     /**
      * init request, like set headers
@@ -36,57 +62,17 @@ abstract class ApiClient {
     open fun initRequest(req: Request) {
     }
 
-    /**
-     * the function of building url
-     */
-    protected open fun buildUrl(path: String, queryString: Map<String, Any?>? = null): String {
-        return buildUrl(listOf(path), queryString)
-    }
+    protected inline fun <reified T : Any> request(builder: RequestOptions.() -> Unit): ApiPromise<T> {
+        val options = RequestOptions()
+        options.urlRoot = urlRoot
+        options.dataType = T::class.java
 
-    /**
-     * the function of building url
-     */
-    protected open fun buildUrl(paths: List<String>? = null, queryString: Map<String, Any?>? = null): String {
-        val url = buildString {
-            append(apiUrl)
+        builder(options)
 
-            paths?.forEach { append("/$it") }
+        options.buildUrl()
+        options.buildDataType()
 
-            if (queryString != null && queryString.isNotEmpty()) {
-                append("?")
-
-                append(queryString.entries.joinToString("&") {
-                    "${it.key}=${it.value.toString().urlEncode()}"
-                })
-            }
-
-        }
-
-        // the normalize doesn't remove double // on below API 21
-        return URI.create(url).normalize().toString()
-    }
-
-    /**
-     * make a HTTP request, for simple return type
-     *
-     * Only GET will be cached
-     * @param cache cache is minute, if it is 0 means no cache
-     * */
-    protected inline fun <reified T : Any> request(method: Method, url: String, body: Any? = null, cache: Int = Fulton.context.defaultCacheDuration): ApiPromise<T> {
-        return request(RequestOptions(method, url, T::class.java, body, cache))
-    }
-
-    /**
-     * make a HTTP request
-     *
-     * calling reified generic method from another reified generic method has problem by language limit,
-     * so have to pass type from the first reified generic
-     *
-     * Only GET will be cached
-     * @param cache cache is minute, if it is 0 means no cache
-     * */
-    protected fun <T : Any> request(method: Method, url: String, type: Type, body: Any? = null, cache: Int = Fulton.context.defaultCacheDuration): ApiPromise<T> {
-        return request(RequestOptions(method, url, type, body, cache))
+        return request(options)
     }
 
     protected fun <T : Any> request(options: RequestOptions): ApiPromise<T> {
@@ -94,7 +80,7 @@ abstract class ApiClient {
 
         promise.promise.context.workerContext.offer {
             if (options.method == Method.GET && options.cacheDuration > NO_CACHE) {
-                val cacheResult = Fulton.context.cacheManagement.get<T>(options.url, options.dataType)
+                val cacheResult = Fulton.context.cacheManagement.get<T>(options.url!!, options.dataType!!)
                 if (cacheResult != null) {
                     // cache hits
                     promise.resolve(cacheResult)
@@ -110,9 +96,9 @@ abstract class ApiClient {
     }
 
     protected open fun <T> startRequest(promise: ApiDeferred<T>, options: RequestOptions) {
-        val req = FuelManager.instance.request(options.method, options.url)
+        val req = FuelManager.instance.request(options.method, options.url!!)
         if (options.body != null) {
-            req.body(options.body.toJson())
+            req.body(options.body!!.toJson())
         }
 
         if (Log.isLoggable(TAG, Log.DEBUG)) {
@@ -154,38 +140,28 @@ abstract class ApiClient {
     }
 
     protected open fun <T> handleSuccess(promise: ApiDeferred<T>, options: RequestOptions, res: Response, bytes: ByteArray) {
-        var result: T? = null
         var shouldCache = options.method == Method.GET && options.cacheDuration > NO_CACHE
 
-        when (options.dataType) {
+        val result: T = when (options.dataType) {
             Unit::class.java, Nothing::class.java -> {
-                @Suppress("UNCHECKED_CAST")
-                result = Unit as T
                 shouldCache = false
+                @Suppress("UNCHECKED_CAST")
+                Unit as T
             }
             String::class.java -> {
                 @Suppress("UNCHECKED_CAST")
-                result = String(bytes) as T
+                String(bytes) as T
             }
             else -> {
-                val isJson = res.headers["Content-Type"]?.any {
-                    it.toLowerCase().contains("json")
-                } ?: false
-
-                if (isJson) {
-                    result = bytes.fromJson(options.dataType)
-
-                }
+                bytes.fromJson(options.dataType!!)
             }
         }
 
         if (shouldCache) {
-            cacheData(options.url, options.cacheDuration, bytes)
+            cacheData(options.url!!, options.cacheDuration, bytes)
         }
 
-        if (result != null) {
-            promise.resolve(result)
-        }
+        promise.resolve(result)
     }
 
     protected open fun <T> handelError(promise: ApiDeferred<T>, req: Request, res: Response, error: FuelError) {
@@ -198,7 +174,7 @@ abstract class ApiClient {
 
             promise.reject(apiError)
         } catch (e: Exception) {
-            Log.e(TAG, "Error Handle failed", e)
+            throw Exception("Error Handle failed", e)
         }
     }
 
