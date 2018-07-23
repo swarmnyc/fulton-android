@@ -7,37 +7,37 @@ import org.junit.runner.RunWith
 
 
 @RunWith(AndroidJUnit4::class)
-class RequestOptionsTest {
+class RequestTest {
     companion object {
-        val TAG = RequestOptionsTest::class.java.simpleName
+        val TAG = RequestTest::class.java.simpleName
     }
 
     @Test
     fun buildUrlTest() {
         val urlRoot = "http://api.fulton.com"
 
-        var options = RequestOptions()
+        var options = Request()
         options.urlRoot = urlRoot
         options.paths = listOf("news")
         options.buildUrl()
 
         assertEquals("http://api.fulton.com/news", options.url)
 
-        options = RequestOptions()
+        options = Request()
         options.urlRoot = urlRoot
         options.paths = listOf("/news")
         options.buildUrl()
 
         assertEquals("http://api.fulton.com/news", options.url)
 
-        options = RequestOptions()
+        options = Request()
         options.urlRoot = urlRoot
         options.paths = listOf("news", "id")
         options.buildUrl()
 
         assertEquals("http://api.fulton.com/news/id", options.url)
 
-        options = RequestOptions()
+        options = Request()
         options.urlRoot = urlRoot
         options.paths= listOf("/news")
         options.query = mapOf("k1" to "a", "k2" to 2, "k3" to "&")

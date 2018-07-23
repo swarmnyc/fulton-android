@@ -1,14 +1,16 @@
 package com.swarmnyc.fulton.android
 
 import android.util.Log
-import com.github.kittinunf.fuel.core.*
-import com.github.kittinunf.result.Result
 import com.swarmnyc.fulton.android.util.fromJson
 import com.swarmnyc.fulton.android.util.toJson
 import nl.komponents.kovenant.Deferred
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.thenApply
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.zip.GZIPInputStream
 
 typealias ApiPromise<T> = Promise<T, ApiError>
 
@@ -62,25 +64,25 @@ abstract class ApiClient {
     open fun initRequest(req: Request) {
     }
 
-    protected inline fun <reified T : Any> request(builder: RequestOptions.() -> Unit): ApiPromise<T> {
-        val options = RequestOptions()
-        options.urlRoot = urlRoot
-        options.dataType = T::class.java
+    protected inline fun <reified T : Any> request(builder: Request.() -> Unit): ApiPromise<T> {
+        val req = Request()
+        req.urlRoot = urlRoot
+        req.dataType = T::class.java
 
-        builder(options)
+        builder(req)
 
-        options.buildUrl()
-        options.buildDataType()
+        req.buildUrl()
+        req.buildDataType()
 
-        return request(options)
+        return request(req)
     }
 
-    protected fun <T : Any> request(options: RequestOptions): ApiPromise<T> {
+    protected fun <T : Any> request(req: Request): ApiPromise<T> {
         val promise = deferred<T, ApiError>()
 
         promise.promise.context.workerContext.offer {
-            if (options.method == Method.GET && options.cacheDuration > NO_CACHE) {
-                val cacheResult = Fulton.context.cacheManagement.get<T>(options.url!!, options.dataType!!)
+            if (req.method == Method.GET && req.cacheDurationMs > NO_CACHE) {
+                val cacheResult = Fulton.context.cacheManagement.get<T>(req.url!!, req.dataType!!)
                 if (cacheResult != null) {
                     // cache hits
                     promise.resolve(cacheResult)
@@ -89,34 +91,90 @@ abstract class ApiClient {
                 }
             }
 
-            startRequest(promise, options)
+            execRequest(promise, req)
         }
 
         return promise.promise
     }
 
-    protected open fun <T> startRequest(promise: ApiDeferred<T>, options: RequestOptions) {
-        val req = FuelManager.instance.request(options.method, options.url!!)
-        if (options.body != null) {
-            req.body(options.body!!.toJson())
-        }
+    protected open fun <T> execRequest(promise: ApiDeferred<T>, req: Request) {
+        initRequest(req)
 
         if (Log.isLoggable(TAG, Log.DEBUG)) {
+            val msg = buildString {
+                appendln("--> ${req.method} (${req.url})")
+                appendln("Body : ${if (req.body == null) "(empty)" else req.body?.toJson()}")
+                appendln("Headers : (${req.headers.size})")
+
+                for ((key, value) in req.headers) {
+                    appendln("$key : $value")
+                }
+            }
+
+            Log.d(TAG, msg)
             Log.d(TAG, "--> ${req.method} (${req.url})\n$req")
         }
 
-        req.timeout(options.timeOut).response { _, res, result ->
-            handleResponse(promise, options, req, res, result)
+        var conn: HttpURLConnection? = null
+        try {
+            val url = URL(req.url)
+            conn = url.openConnection() as HttpURLConnection
+
+            conn.apply {
+                doInput = true
+                connectTimeout = req.timeOutMs
+                requestMethod = if (req.method == Method.PATCH) Method.POST.value else req.method.value
+                instanceFollowRedirects = true
+
+                for ((key, value) in req.headers) {
+                    setRequestProperty(key, value)
+                }
+
+                if (req.method == Method.PATCH) {
+                    setRequestProperty("X-HTTP-Method-Override", "PATCH")
+                }
+
+                if (req.body != null) {
+                    conn.doOutput = true
+
+                    val wither = OutputStreamWriter(conn.outputStream)
+                    req.body!!.toJson(wither)
+
+                    wither.flush()
+                    wither.close()
+                }
+
+                connect()
+
+                val stream = conn.errorStream ?: conn.inputStream
+
+                val contentEncoding = conn.contentEncoding ?: ""
+
+                val data = if (contentEncoding.compareTo("gzip", true) == 0) {
+                    GZIPInputStream(stream).readBytes()
+                } else {
+                    stream.readBytes()
+                }
+
+                stream.close()
+
+                val res = Response(conn.url.toString(), conn.responseCode, conn.headerFields.filterKeys { it != null }, data)
+
+                handleResponse(promise, req, res)
+            }
+        } catch (e: Exception) {
+            handelError(promise, req, Response(error = e))
+        } finally {
+            conn?.disconnect()
         }
     }
 
-    protected open fun <T> handleResponse(promise: ApiDeferred<T>, options: RequestOptions, req: Request, res: Response, result: Result<ByteArray, FuelError>) {
+    protected open fun <T> handleResponse(promise: ApiDeferred<T>, req: Request, res: Response) {
         if (Log.isLoggable(TAG, Log.DEBUG)) {
-            val time = (System.currentTimeMillis() - options.startedAt)
+            val time = (System.currentTimeMillis() - req.startedAt)
             val msg = buildString {
-                appendln("<-- ${res.statusCode} (${res.url})")
+                appendln("<-- ${res.status} (${res.url})")
                 appendln("Time Spent : $time")
-                appendln("Response : ${res.responseMessage}")
                 appendln("Length : ${res.contentLength}")
                 appendln("Headers : (${res.headers.size})")
                 for ((key, value) in res.headers) {
@@ -128,19 +186,19 @@ abstract class ApiClient {
             Log.d(TAG, msg)
         }
 
-        if (res.statusCode < 400) {
+        if (res.error == null) {
             try {
-                handleSuccess(promise, options, res, result.get())
+                handleSuccess(promise, req, res)
             } catch (e: Throwable) {
-                handelError(promise, req, res, result.component2()!!)
+                handelError(promise, req, res)
             }
         } else {
-            handelError(promise, req, res, result.component2()!!)
+            handelError(promise, req, res)
         }
     }
 
-    protected open fun <T> handleSuccess(promise: ApiDeferred<T>, options: RequestOptions, res: Response, bytes: ByteArray) {
-        var shouldCache = options.method == Method.GET && options.cacheDuration > NO_CACHE
+    protected open fun <T> handleSuccess(promise: ApiDeferred<T>, options: Request, res: Response) {
+        var shouldCache = options.method == Method.GET && options.cacheDurationMs > NO_CACHE
 
         val result: T = when (options.dataType) {
             Unit::class.java, Nothing::class.java -> {
@@ -150,22 +208,22 @@ abstract class ApiClient {
             }
             String::class.java -> {
                 @Suppress("UNCHECKED_CAST")
-                String(bytes) as T
+                String(res.data) as T
             }
             else -> {
-                bytes.fromJson(options.dataType!!)
+                res.data.fromJson(options.dataType!!)
             }
         }
 
         if (shouldCache) {
-            cacheData(options.url!!, options.cacheDuration, bytes)
+            cacheData(options.url!!, options.cacheDurationMs, res.data)
         }
 
         promise.resolve(result)
     }
 
-    protected open fun <T> handelError(promise: ApiDeferred<T>, req: Request, res: Response, error: FuelError) {
-        val apiError = ApiError(req, res, error.exception)
+    protected open fun <T> handelError(promise: ApiDeferred<T>, req: Request, res: Response) {
+        val apiError = ApiError(res.error!!, req, res)
 
         try {
             promise.promise.fail {

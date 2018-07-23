@@ -1,6 +1,6 @@
 package com.swarmnyc.fulton.android.util
 
-import com.github.kittinunf.fuel.util.Base64
+import android.util.Base64
 import java.net.URLEncoder
 
 

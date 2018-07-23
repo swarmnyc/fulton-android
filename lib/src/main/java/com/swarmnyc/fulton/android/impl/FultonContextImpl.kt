@@ -7,8 +7,8 @@ import com.swarmnyc.fulton.android.FultonContext
 import java.lang.reflect.Type
 
 class FultonContextImpl : FultonContext {
-    override var defaultCacheDuration: Int = 300
-    override var requestTimeOut: Int = 5
+    override var defaultCacheDurationMs: Int = 300_000 // 5 minutes
+    override var requestTimeOutMs: Int = 0
     override var cacheManagement: CacheManagement = TestCacheManagementImpl()
     override var errorHandler: ApiErrorHandler = VoidApiErrorHandler()
 }
@@ -19,7 +19,7 @@ class VoidApiErrorHandler : ApiErrorHandler {
 }
 
 class TestCacheManagementImpl : CacheManagement {
-    override fun add(api: String, url: String, duration: Int, data: ByteArray) {
+    override fun add(api: String, url: String, durationMs: Int, data: ByteArray) {
 
     }
 

@@ -2,24 +2,19 @@ package com.swarmnyc.fulton.android
 
 import android.support.test.runner.AndroidJUnit4
 import android.util.Log
-import com.github.kittinunf.fuel.core.FuelError
-import com.github.kittinunf.fuel.core.Method
-import com.github.kittinunf.fuel.core.Request
-import com.github.kittinunf.fuel.core.Response
-import com.github.kittinunf.result.Result
 import com.swarmnyc.fulton.android.util.await
 import com.swarmnyc.fulton.android.util.toJson
-import io.mockk.mockk
-import nl.komponents.kovenant.*
-import org.junit.Assert.*
-import org.junit.Ignore
+import nl.komponents.kovenant.Deferred
+import nl.komponents.kovenant.Promise
+import nl.komponents.kovenant.deferred
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.net.URL
 import java.util.concurrent.CountDownLatch
 
 
-const val UrlRoot = "http://api.fulton.com"
+private const val UrlRoot = "http://api.fulton.com"
 
 @RunWith(AndroidJUnit4::class)
 class ApiClientTest {
@@ -63,12 +58,10 @@ class ApiClientTest {
                 }
             }
 
-            override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
-                val req = mockk<Request>()
-                val res = Response(URL(options.url), 200)
-                val result = Result.Success<ByteArray, FuelError>(ByteArray(0))
+            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
+                val res = Response(urlRoot, 200)
 
-                handleResponse(promise, options, req, res, result)
+                handleResponse(promise, req, res)
             }
         }
 
@@ -88,12 +81,10 @@ class ApiClientTest {
                 }
             }
 
-            override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
-                val req = mockk<Request>()
-                val res = Response(URL(options.url), 200)
-                val result = Result.Success<ByteArray, FuelError>("TEST".toByteArray())
+            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
+                val res = Response(urlRoot, 200, data = "TEST".toByteArray())
 
-                handleResponse(promise, options, req, res, result)
+                handleResponse(promise, req, res)
             }
         }
 
@@ -113,12 +104,10 @@ class ApiClientTest {
                 }
             }
 
-            override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
-                val req = mockk<Request>()
-                val res = Response(URL(options.url), 400)
-                val result = Result.error(FuelError(Exception("TEST")))
+            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
+                val res = Response(urlRoot, 400, data = "TEST".toByteArray())
 
-                handleResponse(promise, options, req, res, result)
+                handleResponse(promise, req, res)
             }
         }
 
@@ -146,12 +135,10 @@ class ApiClientTest {
                 return request {}
             }
 
-            override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
-                val req = mockk<Request>()
-                val res = Response(URL(options.url), 200)
-                val result = Result.Success<ByteArray, FuelError>("1234".toByteArray())
+            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
+                val res = Response(urlRoot, 200, data = "1234".toByteArray())
 
-                handleResponse(promise, options, req, res, result)
+                handleResponse(promise, req, res)
             }
         }
 
@@ -171,16 +158,14 @@ class ApiClientTest {
                 return request {
                     method = Method.GET
                     paths = listOf("list")
-                    subDataType = listOf(ModelA::class.java)
+                    subResultType = listOf(ModelA::class.java)
                 }
             }
 
-            override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
-                val req = mockk<Request>()
-                val res = Response(URL(options.url), 200)
-                val result = Result.Success<ByteArray, FuelError>(json.toByteArray())
+            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
+                val res = Response(urlRoot, 200, data = json.toByteArray())
 
-                handleResponse(promise, options, req, res, result)
+                handleResponse(promise, req, res)
             }
         }
 
@@ -202,12 +187,10 @@ class ApiClientTest {
                 return request {}
             }
 
-            override fun <T> startRequest(promise: Deferred<T, ApiError>, options: RequestOptions) {
-                val req = mockk<Request>()
-                val res = Response(URL(options.url), 400)
-                val result = Result.error(FuelError(Exception("TEST")))
+            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
+                val res = Response(urlRoot, 400, data = "TEST".toByteArray())
 
-                handleResponse(promise, options, req, res, result)
+                handleResponse(promise, req, res)
             }
         }
 

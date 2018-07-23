@@ -52,6 +52,10 @@ fun Any.toJson(): String {
     return gson.toJson(this)
 }
 
+fun Any.toJson(writer: Appendable) {
+    gson.toJson(this, writer)
+}
+
 /**
  * a extension of string that convert it to a given typed object
  */

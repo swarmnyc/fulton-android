@@ -15,9 +15,9 @@ object Fulton {
 }
 
 interface FultonContext {
-    var defaultCacheDuration: Int
+    var defaultCacheDurationMs: Int
+    var requestTimeOutMs: Int
     var cacheManagement: CacheManagement
-    var requestTimeOut: Int
     var errorHandler:  ApiErrorHandler
 }
 
@@ -27,7 +27,7 @@ interface ApiErrorHandler {
 
 
 interface CacheManagement {
-    fun add(api: String, url: String, duration: Int, data: ByteArray)
+    fun add(api: String, url: String, durationMs: Int, data: ByteArray)
 
     fun <T> get(url: String, type: Type): T?
 
