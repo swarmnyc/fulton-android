@@ -74,6 +74,15 @@ fun <T> ByteArray.fromJson(type: Type): T {
 }
 
 /**
+ * a extension of byte array that convert it to a given typed object
+ */
+inline fun <reified T> ByteArray.fromJson(): T {
+    val type: Type = (object : TypeToken<T>() {}).type
+    val reader = InputStreamReader(ByteArrayInputStream(this))
+    return gson.fromJson(reader, type)
+}
+
+/**
  * a DSL for json, for example
  * ``` json
  * json {

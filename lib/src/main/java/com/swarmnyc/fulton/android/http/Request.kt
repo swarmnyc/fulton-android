@@ -1,18 +1,12 @@
-package com.swarmnyc.fulton.android
+package com.swarmnyc.fulton.android.http
 
+import com.swarmnyc.fulton.android.Fulton
+import com.swarmnyc.fulton.android.util.JsonGenericType
 import com.swarmnyc.fulton.android.util.urlEncode
 import java.lang.reflect.Type
 import java.net.URI
 
 class Request {
-    constructor()
-
-    constructor(method: Method, url: String, dataType: Type = String::class.java) {
-        this.method = method
-        this.url = url
-        this.dataType = dataType
-    }
-
     var timeOutMs = Fulton.context.requestTimeOutMs
     var method: Method = Method.GET
 
@@ -23,6 +17,7 @@ class Request {
 
     var url: String? = null
 
+    var useGzip: Boolean = Fulton.context.defaultUseGzip
     var body: Any? = null
     var queryParams: QueryParams? = null
 

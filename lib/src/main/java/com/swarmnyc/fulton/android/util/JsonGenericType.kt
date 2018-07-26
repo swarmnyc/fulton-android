@@ -1,4 +1,4 @@
-package com.swarmnyc.fulton.android
+package com.swarmnyc.fulton.android.util
 
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type

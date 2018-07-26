@@ -1,4 +1,4 @@
-package com.swarmnyc.fulton.android
+package com.swarmnyc.fulton.android.http
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -175,7 +175,6 @@ class QueryParams {
     }
 }
 
-// TODO: Make it better when turn this to Fulton-Android
 /**
  * the DSL for query params
  */

@@ -1,7 +1,11 @@
-package com.swarmnyc.fulton.android
+package com.swarmnyc.fulton.android.http
 
 import android.support.test.runner.AndroidJUnit4
 import android.util.Log
+import com.swarmnyc.fulton.android.Fulton
+import com.swarmnyc.fulton.android.error.ApiErrorHandler
+import com.swarmnyc.fulton.android.error.ApiError
+import com.swarmnyc.fulton.android.util.BaseFultonTest
 import com.swarmnyc.fulton.android.util.await
 import com.swarmnyc.fulton.android.util.toJson
 import nl.komponents.kovenant.Deferred
@@ -17,7 +21,7 @@ import java.util.concurrent.CountDownLatch
 private const val UrlRoot = "http://api.fulton.com"
 
 @RunWith(AndroidJUnit4::class)
-class ApiClientTest {
+class ApiClientTest : BaseFultonTest() {
     companion object {
         val TAG = ApiClientTest::class.java.simpleName!!
     }
@@ -200,7 +204,7 @@ class ApiClientTest {
         Fulton.context.errorHandler = object : ApiErrorHandler {
             override fun onError(apiError: ApiError) {
                 Log.d(TAG, "error called")
-                assertEquals(true, apiError.isHandled)
+                assertEquals(false, apiError.isHandled)
                 result = true
 
                 latch.countDown()
@@ -209,7 +213,7 @@ class ApiClientTest {
 
         apiClient.get()
                 .fail {
-                    it.isHandled = true
+                    it.isHandled = false
                 }
 
         latch.await()

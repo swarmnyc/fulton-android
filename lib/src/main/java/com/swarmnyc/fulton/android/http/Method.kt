@@ -1,4 +1,4 @@
-package com.swarmnyc.fulton.android
+package com.swarmnyc.fulton.android.http
 
 enum class Method(val value: String) {
     GET("GET"),

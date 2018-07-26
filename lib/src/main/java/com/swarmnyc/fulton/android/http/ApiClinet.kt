@@ -1,48 +1,17 @@
-package com.swarmnyc.fulton.android
+package com.swarmnyc.fulton.android.http
 
 import android.util.Log
+import com.swarmnyc.fulton.android.*
+import com.swarmnyc.fulton.android.error.ApiError
+import com.swarmnyc.fulton.android.error.HttpApiError
 import com.swarmnyc.fulton.android.util.fromJson
 import com.swarmnyc.fulton.android.util.toJson
-import nl.komponents.kovenant.Deferred
-import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
-import nl.komponents.kovenant.thenApply
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.zip.GZIPInputStream
-
-typealias ApiPromise<T> = Promise<T, ApiError>
-
-typealias ApiDeferred<T> = Deferred<T, ApiError>
-
-infix fun <V, R> ApiPromise<V>.then(bind: (V) -> ApiPromise<R>): ApiPromise<R> {
-    val deferred = deferred<R, ApiError>(context)
-    success {
-        try {
-            bind(it).success(deferred::resolve).fail(deferred::reject)
-        } catch (e: Exception) {
-            deferred.reject(ApiError(e))
-        }
-    }.fail(deferred::reject)
-
-    deferred.promise.thenApply { }
-
-    return deferred.promise
-}
-
-inline infix fun <V, R> ApiPromise<V>.thenApply(crossinline bind: V.() -> ApiPromise<R>): ApiPromise<R> {
-    val deferred = deferred<R, ApiError>(context)
-    success {
-        try {
-            bind(it).success(deferred::resolve).fail(deferred::reject)
-        } catch (e: Exception) {
-            deferred.reject(ApiError(e))
-        }
-    }.fail(deferred::reject)
-
-    return deferred.promise
-}
+import java.util.zip.GZIPOutputStream
 
 /**
  * Base Api Client, supports
@@ -53,6 +22,7 @@ inline infix fun <V, R> ApiPromise<V>.thenApply(crossinline bind: V.() -> ApiPro
 abstract class ApiClient {
     companion object {
         const val TAG = "fulton.api"
+        const val GZip = "gzip"
         const val NO_CACHE = 0
     }
 
@@ -82,7 +52,7 @@ abstract class ApiClient {
 
         promise.promise.context.workerContext.offer {
             if (req.method == Method.GET && req.cacheDurationMs > NO_CACHE) {
-                val cacheResult = Fulton.context.cacheManagement.get<T>(req.url!!, req.dataType!!)
+                val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.dataType!!)
                 if (cacheResult != null) {
                     // cache hits
                     promise.resolve(cacheResult)
@@ -137,11 +107,18 @@ abstract class ApiClient {
                 if (req.body != null) {
                     conn.doOutput = true
 
-                    val wither = OutputStreamWriter(conn.outputStream)
-                    req.body!!.toJson(wither)
+                    val writer = OutputStreamWriter(if (req.useGzip) {
+                        setRequestProperty("Content-Encoding", GZip)
+                        setRequestProperty("Accept-Encoding", GZip)
+                        GZIPOutputStream(conn.outputStream)
+                    } else {
+                        conn.outputStream
+                    })
 
-                    wither.flush()
-                    wither.close()
+                    req.body!!.toJson(writer)
+
+                    writer.flush()
+                    writer.close()
                 }
 
                 connect()
@@ -150,7 +127,7 @@ abstract class ApiClient {
 
                 val contentEncoding = conn.contentEncoding ?: ""
 
-                val data = if (contentEncoding.compareTo("gzip", true) == 0) {
+                val data = if (contentEncoding.compareTo(GZip, true) == 0) {
                     GZIPInputStream(stream).readBytes()
                 } else {
                     stream.readBytes()
@@ -223,11 +200,15 @@ abstract class ApiClient {
     }
 
     protected open fun <T> handelError(promise: ApiDeferred<T>, req: Request, res: Response) {
-        val apiError = ApiError(res.error!!, req, res)
+        val apiError = createError(req, res)
 
         try {
+            onError(apiError)
+
             promise.promise.fail {
-                Fulton.context.errorHandler.onError(apiError)
+                if (!it.isHandled) {
+                    Fulton.context.errorHandler.onError(apiError)
+                }
             }
 
             promise.reject(apiError)
@@ -236,12 +217,18 @@ abstract class ApiClient {
         }
     }
 
+    protected open fun createError(req: Request, res: Response): ApiError {
+        return HttpApiError(req, res)
+    }
+
+    protected open fun onError(error: ApiError) {}
+
     protected open fun cacheData(url: String, cache: Int, byteArray: ByteArray) {
-        Fulton.context.cacheManagement.add(this.javaClass.simpleName, url, cache, byteArray)
+        Fulton.context.cacheManager.add(this.javaClass.simpleName, url, cache, byteArray)
     }
 
     open fun cleanCache() {
-        Fulton.context.cacheManagement.clean(this.javaClass.simpleName)
+        Fulton.context.cacheManager.clean(this.javaClass.simpleName)
     }
 }
 

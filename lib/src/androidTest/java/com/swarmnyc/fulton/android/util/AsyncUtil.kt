@@ -1,8 +1,7 @@
 package com.swarmnyc.fulton.android.util
 
-import com.swarmnyc.fulton.android.ApiError
+import com.swarmnyc.fulton.android.error.ApiError
 import nl.komponents.kovenant.Promise
-import nl.komponents.kovenant.ui.failUi
 import java.util.concurrent.CountDownLatch
 
 fun <T> Promise<T?, Throwable>.await(): T? {
