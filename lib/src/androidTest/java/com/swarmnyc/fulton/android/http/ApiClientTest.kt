@@ -236,4 +236,20 @@ class ApiClientTest : BaseFultonTest() {
 
         assertEquals("test-author", result.data[0].author.name)
     }
+
+    @Test
+    fun anonymousApiClientTest() {
+        val result: TopDogAuthor = Fulton.context.request<TopDogAuthor> {
+            urlRoot = "http://api.fulton.com"
+            dataType = TopDogAuthor::class.java
+            paths("authors", "1")
+
+            //or
+            //url = "http://api.fulton.com/authors/1"
+
+            mockResponse = Response(200, TopDogAuthor("1", "test-author", ""))
+        }.await()!!
+
+        assertEquals("test-author", result.name)
+    }
 }

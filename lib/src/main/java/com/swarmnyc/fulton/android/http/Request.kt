@@ -1,13 +1,15 @@
 package com.swarmnyc.fulton.android.http
 
 import com.swarmnyc.fulton.android.Fulton
+import com.swarmnyc.fulton.android.error.ApiError
 import com.swarmnyc.fulton.android.util.JsonGenericType
 import com.swarmnyc.fulton.android.util.urlEncode
 import java.lang.reflect.Type
 import java.net.URI
 
 class Request {
-    var timeOutMs = Fulton.context.requestTimeOutMs
+    var connectionTimeOutMs = Fulton.context.connectTimeoutMs
+    var readTimeOutMs = Fulton.context.readTimeOutMs
     var method: Method = Method.GET
 
     var urlRoot: String? = null
@@ -123,6 +125,13 @@ class Request {
         if (dataType != null && subResultType != null) {
             this.dataType = JsonGenericType(dataType!!, *subResultType!!.toTypedArray())
         }
+    }
+
+    internal fun verify(): Exception? {
+        if (url == null) return NullPointerException("Request.url cannot be null")
+        if (dataType == null) return NullPointerException("Request.dataType cannot be null")
+
+        return null
     }
 }
 

@@ -30,34 +30,46 @@ abstract class ApiClient {
     open fun initRequest(req: Request) {
     }
 
-    protected inline fun <reified T : Any> request(builder: Request.() -> Unit): ApiPromise<T> {
+    protected inline fun <reified T> request(builder: Request.() -> Unit): ApiPromise<T> {
         val req = Request()
         req.urlRoot = urlRoot
         req.dataType = T::class.java
 
         builder(req)
 
-        req.buildUrl()
+        if (req.url == null) req.buildUrl()
+
         req.buildDataType()
 
         return request(req)
     }
 
-    protected fun <T : Any> request(req: Request): ApiPromise<T> {
+    protected fun <T> request(req: Request): ApiPromise<T> {
         val deferred = deferred<T, ApiError>()
 
-        deferred.promise.context.workerContext.offer {
-            if (req.method == Method.GET && req.cacheDurationMs > NO_CACHE) {
-                val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.dataType!!)
-                if (cacheResult != null) {
-                    // cache hits
-                    deferred.resolve(cacheResult)
+        // check request
+        val error = req.verify()
 
-                    return@offer
+        if (error == null) {
+            deferred.promise.context.workerContext.offer {
+                try {
+                    if (req.method == Method.GET && req.cacheDurationMs > NO_CACHE) {
+                        val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.dataType!!)
+                        if (cacheResult != null) {
+                            // cache hits
+                            deferred.resolve(cacheResult)
+
+                            return@offer
+                        }
+                    }
+
+                    startRequest(deferred, req)
+                } catch (e: Exception) {
+                    deferred.reject(ApiError(e))
                 }
             }
-
-            startRequest(deferred, req)
+        } else {
+            deferred.reject(ApiError(error))
         }
 
         return deferred.promise

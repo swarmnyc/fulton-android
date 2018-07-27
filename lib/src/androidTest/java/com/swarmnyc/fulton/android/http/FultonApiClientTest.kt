@@ -111,7 +111,6 @@ class FultonApiClientTest : BaseFultonTest() {
         assertEquals("abc", result.id)
     }
 
-
     @Test
     fun detailWithPathTest() {
         var request: Request? = null

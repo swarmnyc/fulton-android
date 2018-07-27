@@ -32,7 +32,9 @@ class RequestExecutorImpl : RequestExecutor() {
 
             conn.apply {
                 doInput = true
-                connectTimeout = req.timeOutMs
+                if (req.connectionTimeOutMs != null) connectTimeout = req.connectionTimeOutMs!!
+                if (req.readTimeOutMs != null) readTimeout = req.readTimeOutMs!!
+
                 requestMethod = if (req.method == Method.PATCH) Method.POST.value else req.method.value
                 instanceFollowRedirects = true
 
