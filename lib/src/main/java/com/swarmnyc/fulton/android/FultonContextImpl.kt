@@ -5,6 +5,8 @@ import com.swarmnyc.fulton.android.error.ApiErrorHandler
 import com.swarmnyc.fulton.android.cache.CacheManager
 import com.swarmnyc.fulton.android.cache.VoidCacheManagrImpl
 import com.swarmnyc.fulton.android.error.VoidApiErrorHandlerImpl
+import com.swarmnyc.fulton.android.http.RequestExecutor
+import com.swarmnyc.fulton.android.http.RequestExecutorImpl
 import com.swarmnyc.fulton.android.identity.IdentityManager
 import com.swarmnyc.fulton.android.identity.IdentityManagerImpl
 
@@ -17,6 +19,8 @@ class FultonContextImpl(context: Context) : FultonContext {
 
     override var cacheManager: CacheManager = VoidCacheManagrImpl()
     override var identityManager: IdentityManager = IdentityManagerImpl(context)
+    override var requestExecutor: RequestExecutor = RequestExecutorImpl()
+    override var mockRequestExecutor: RequestExecutor? = null
 }
 
 

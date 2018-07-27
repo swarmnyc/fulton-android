@@ -9,7 +9,7 @@ import com.swarmnyc.fulton.android.error.HttpApiError
  * Api Client for Fulton
  * */
 abstract class FultonApiClient : ApiClient() {
-    protected var identityManager = Fulton.context.identityManager
+    protected var identityManager = context.identityManager
 
     override fun initRequest(req: Request) {
         if (identityManager.isValid()) {

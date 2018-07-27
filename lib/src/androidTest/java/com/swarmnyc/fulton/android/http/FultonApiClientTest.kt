@@ -33,8 +33,8 @@ class FultonApiClientTest : BaseFultonTest() {
                 }
             }
 
-            override fun <T> handleResponse(promise: ApiDeferred<T>, req: Request, res: Response) {
-                super.handleResponse(promise, req, res)
+            override fun <T> endRequest(deferred: ApiDeferred<T>, req: Request, res: Response) {
+                super.endRequest(deferred, req, res)
                 request = req
             }
         }

@@ -7,6 +7,9 @@ import com.swarmnyc.fulton.android.error.ApiErrorHandler
 import com.swarmnyc.fulton.android.error.ApiError
 import com.swarmnyc.fulton.android.model.ModelA
 import com.swarmnyc.fulton.android.model.ModelB
+import com.swarmnyc.fulton.android.model.TopDogAuthor
+import com.swarmnyc.fulton.android.model.TopDogPost
+import com.swarmnyc.fulton.android.real.TopDogPostApiClient
 import com.swarmnyc.fulton.android.util.BaseFultonTest
 import com.swarmnyc.fulton.android.util.await
 import com.swarmnyc.fulton.android.util.toJson
@@ -149,10 +152,10 @@ class ApiClientTest : BaseFultonTest() {
                 }
             }
 
-            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
+            override fun <T> startRequest(deferred: Deferred<T, ApiError>, req: Request) {
                 val res = Response(200, data = json.toByteArray())
 
-                handleResponse(promise, req, res)
+                endRequest(deferred, req, res)
             }
         }
 
@@ -185,14 +188,14 @@ class ApiClientTest : BaseFultonTest() {
                 Log.d(TAG, "error called")
                 assertEquals(false, apiError.isHandled)
                 result = true
+
+                latch.countDown()
             }
         }
 
         apiClient.get()
                 .fail {
                     it.isHandled = false
-                }.always {
-                    latch.countDown()
                 }
 
         latch.await()
@@ -214,5 +217,23 @@ class ApiClientTest : BaseFultonTest() {
         val result = apiClient.get().await()
 
         assertEquals(Unit, result)
+    }
+
+    @Test
+    fun mockRequestExecutorTest() {
+        Fulton.context.mockRequestExecutor = object : MockRequestExecutor() {
+            override fun mockResponse(req: Request): Response {
+                val author = TopDogAuthor("1", "test-author", "")
+                return Response(200, ApiManyResult(listOf(TopDogPost("1", "test", listOf(), "", "", "", author, listOf()))))
+            }
+        }
+
+        val apiClient = TopDogPostApiClient()
+
+        val result = apiClient.listPosts().await()!!
+
+        Fulton.context.mockRequestExecutor = null
+
+        assertEquals("test-author", result.data[0].author.name)
     }
 }
