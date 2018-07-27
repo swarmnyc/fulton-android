@@ -29,10 +29,14 @@ class Request {
     var paths: List<String>? = null
 
     /**
-     * set the path of the url
+     * add the path of the url
      * */
     fun paths(vararg values: String) {
-        this.paths = values.asList()
+        if (this.paths == null) {
+            this.paths = values.asList()
+        } else {
+            this.paths = this.paths!! + values
+        }
     }
 
     /**
@@ -41,10 +45,14 @@ class Request {
     var query: Map<String, Any>? = null
 
     /**
-     * set the query of the url
+     * add the query of the url
      * */
     fun query(vararg values: Pair<String, Any>) {
-        this.query = values.toMap()
+        if (this.query == null) {
+            this.query = values.toMap()
+        } else {
+            this.query = this.query!! + values
+        }
     }
 
     /**
@@ -58,7 +66,7 @@ class Request {
     /**
      * add the headers of the request
      * */
-    fun headers(vararg values: Pair<String, String>){
+    fun headers(vararg values: Pair<String, String>) {
         headers.putAll(values)
     }
 
@@ -68,10 +76,14 @@ class Request {
     var subResultType: List<Type>? = null
 
     /**
-     * set the result type of the request
+     * add the result type of the request
      * */
-    fun subResultType(vararg values: Type){
-        subResultType = values.asList()
+    fun subResultType(vararg values: Type) {
+        if (this.subResultType == null) {
+            this.subResultType = values.asList()
+        } else {
+            this.subResultType = this.subResultType!! + values
+        }
     }
 
     /**

@@ -3,6 +3,7 @@ package com.swarmnyc.fulton.android.http
 import com.swarmnyc.fulton.android.*
 import com.swarmnyc.fulton.android.error.ApiError
 import com.swarmnyc.fulton.android.error.HttpApiError
+import com.swarmnyc.fulton.android.util.JsonGenericType
 import com.swarmnyc.fulton.android.util.fromJson
 import nl.komponents.kovenant.deferred
 
@@ -93,11 +94,21 @@ abstract class ApiClient {
     protected open fun <T> handleSuccess(deferred: ApiDeferred<T>, options: Request, res: Response) {
         var shouldCache = options.method == Method.GET && options.cacheDurationMs > NO_CACHE
 
-        val result: T = when (options.dataType) {
+        val dataType = if (options.dataType is JsonGenericType) {
+            (options.dataType as JsonGenericType).rawType
+        } else {
+            options.dataType
+        }
+
+        val result: T = when (dataType) {
             Unit::class.java, Nothing::class.java -> {
                 shouldCache = false
                 @Suppress("UNCHECKED_CAST")
                 Unit as T
+            }
+            ApiOneResult::class.java -> {
+                // result is { data : T }, but convert to return T, so when using can skip .data
+                res.data.fromJson<ApiOneResult<T>>(options.dataType!!).data
             }
             else -> {
                 res.data.fromJson(options.dataType!!)

@@ -65,4 +65,139 @@ class FultonApiClientTest : BaseFultonTest() {
         assertEquals(2, result.data.size)
         assertEquals("Test1", result.data[0].name)
     }
+
+    @Test
+    fun listWithPathTest() {
+        var request: Request? = null
+
+        val apiClient = object : FultonApiClient() {
+            override val urlRoot: String = "http://api.fulton.com"
+
+            fun listAuthor(): ApiPromise<ApiManyResult<TopDogAuthor>> {
+                return list {
+                    paths("list", "abc")
+
+                    mockResponse = Response(200)
+                }
+            }
+
+            override fun <T> endRequest(deferred: ApiDeferred<T>, req: Request, res: Response) {
+                request = req
+
+                super.endRequest(deferred, req, res)
+            }
+        }
+
+        apiClient.listAuthor().await()
+
+        assertEquals("http://api.fulton.com/list/abc", request?.url)
+    }
+
+    @Test
+    fun detailTest() {
+        val apiClient = object : FultonApiClient() {
+            override val urlRoot: String = "http://api.fulton.com"
+
+            fun getAuthor(id: String): ApiPromise<TopDogAuthor> {
+                return detail(id) {
+                    val data = ApiOneResult(TopDogAuthor(id, "Test1", "abc"))
+                    mockResponse = Response(200, data)
+                }
+            }
+        }
+
+        val result = apiClient.getAuthor("abc").await()!!
+
+        assertEquals("abc", result.id)
+    }
+
+
+    @Test
+    fun detailWithPathTest() {
+        var request: Request? = null
+
+        val apiClient = object : FultonApiClient() {
+            override val urlRoot: String = "http://api.fulton.com/authors"
+
+            fun getAuthor(id: String): ApiPromise<TopDogAuthor> {
+                return detail(id) {
+                    paths("self")
+
+                    val data = ApiOneResult(TopDogAuthor(id, "Test1", "abc"))
+                    mockResponse = Response(200, data)
+                }
+            }
+
+            override fun <T> endRequest(deferred: ApiDeferred<T>, req: Request, res: Response) {
+                request = req
+                super.endRequest(deferred, req, res)
+            }
+        }
+
+        apiClient.getAuthor("abc").await()
+
+        assertEquals("http://api.fulton.com/authors/self/abc", request?.url)
+    }
+
+    @Test
+    fun createTest() {
+        val apiClient = object : FultonApiClient() {
+            override val urlRoot: String = "http://api.fulton.com/authors"
+
+            fun createAuthor(obj: TopDogAuthor): ApiPromise<TopDogAuthor> {
+                return create(obj) {
+                    mockResponse = Response(201, ApiOneResult(obj))
+                }
+            }
+        }
+
+        val result = apiClient.createAuthor(TopDogAuthor("1", "Test1", "abc")).await()!!
+
+        assertEquals("1", result.id)
+    }
+
+    @Test
+    fun updateTest() {
+        val apiClient = object : FultonApiClient() {
+            override val urlRoot: String = "http://api.fulton.com/authors"
+
+            fun update(obj: TopDogAuthor): ApiPromise<Unit> {
+                return super.update(obj.id, obj) {
+                    mockResponse = Response(202)
+                }
+            }
+        }
+
+        apiClient.update(TopDogAuthor("1", "Test1", "abc")).await()
+    }
+
+    @Test
+    fun updatePartialTest() {
+        val apiClient = object : FultonApiClient() {
+            override val urlRoot: String = "http://api.fulton.com/authors"
+
+            fun update(id: String, obj: Map<String, Any>): ApiPromise<Unit> {
+                return super.update(id, obj) {
+                    mockResponse = Response(202)
+                }
+            }
+        }
+
+        apiClient.update("1", mapOf()).await()
+    }
+
+    @Test
+    fun deleteTest() {
+        val apiClient = object : FultonApiClient() {
+            override val urlRoot: String = "http://api.fulton.com/authors"
+
+            fun delete(id: String): ApiPromise<Unit> {
+                return delete(id) {
+                    mockResponse = Response(202)
+                }
+            }
+        }
+
+        apiClient.delete("1").await()
+    }
 }
