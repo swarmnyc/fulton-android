@@ -1,16 +1,21 @@
 package com.swarmnyc.fulton.android.http
 
-class Response(val url: String = "", val status: Int = -1, val headers: Map<String, List<String>> = emptyMap(), val data: ByteArray = ByteArray(0), var error: Exception? = null) {
+import com.swarmnyc.fulton.android.util.toJsonBytes
+
+class Response(var url: String, val status: Int, val headers: Map<String, List<String>>, val data: ByteArray, var error: Exception?) {
+    constructor(error: Exception) : this("", -1, mapOf(), ByteArray(0), error)
+    constructor(status: Int) : this("", status, mapOf(), ByteArray(0), null)
+    constructor(status: Int, data: ByteArray) : this("", status, mapOf(), data, null)
+    constructor(status: Int, data: Any) : this("", status, mapOf(), data.toJsonBytes(), null)
+
     val contentLength: Int
         get() = data.size
 
-    val isJson: Boolean
+    val isJson: Boolean = headers["Content-Type"]?.any {
+        it.toLowerCase().contains("json")
+    } ?: false
 
     init {
-        isJson = headers["Content-Type"]?.any {
-            it.toLowerCase().contains("json")
-        } ?: false
-
         if (error == null && (status < 200 || status >= 400)) {
             error = if (isJson) {
                 Exception("Api Error")

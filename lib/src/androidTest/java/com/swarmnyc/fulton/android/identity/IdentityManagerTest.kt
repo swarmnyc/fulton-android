@@ -5,6 +5,7 @@ import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import com.swarmnyc.fulton.android.util.BaseFultonTest
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -25,7 +26,17 @@ class IdentityManagerTest : BaseFultonTest() {
 
         val sp = InstrumentationRegistry.getContext().getSharedPreferences(IdentityManagerImpl.SP_File, Context.MODE_PRIVATE)
 
-        assertNotNull(sp.getString(IdentityManagerImpl.Field_User, null))
         assertNotNull(sp.getString(IdentityManagerImpl.Field_AccessToken, null))
+    }
+
+    @Test
+    fun cleanTokenTest() {
+        identityManager.token = null
+
+        assertNull(identityManager.user)
+
+        val sp = InstrumentationRegistry.getContext().getSharedPreferences(IdentityManagerImpl.SP_File, Context.MODE_PRIVATE)
+
+        assertNull(sp.getString(IdentityManagerImpl.Field_AccessToken, null))
     }
 }

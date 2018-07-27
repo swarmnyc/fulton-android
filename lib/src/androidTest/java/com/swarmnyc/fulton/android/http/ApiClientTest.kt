@@ -5,6 +5,8 @@ import android.util.Log
 import com.swarmnyc.fulton.android.Fulton
 import com.swarmnyc.fulton.android.error.ApiErrorHandler
 import com.swarmnyc.fulton.android.error.ApiError
+import com.swarmnyc.fulton.android.model.ModelA
+import com.swarmnyc.fulton.android.model.ModelB
 import com.swarmnyc.fulton.android.util.BaseFultonTest
 import com.swarmnyc.fulton.android.util.await
 import com.swarmnyc.fulton.android.util.toJson
@@ -58,14 +60,8 @@ class ApiClientTest : BaseFultonTest() {
 
             fun get(): Promise<Unit?, ApiError> {
                 return request {
-
+                    mockResponse = Response(200)
                 }
-            }
-
-            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
-                val res = Response(urlRoot, 200)
-
-                handleResponse(promise, req, res)
             }
         }
 
@@ -81,14 +77,8 @@ class ApiClientTest : BaseFultonTest() {
 
             fun get(): Promise<String?, ApiError> {
                 return request {
-
+                    mockResponse = Response(200, data = "TEST".toByteArray())
                 }
-            }
-
-            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
-                val res = Response(urlRoot, 200, data = "TEST".toByteArray())
-
-                handleResponse(promise, req, res)
             }
         }
 
@@ -104,14 +94,8 @@ class ApiClientTest : BaseFultonTest() {
 
             fun get(): Promise<String?, ApiError> {
                 return request {
-
+                    mockResponse = Response(400, data = "TEST".toByteArray())
                 }
-            }
-
-            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
-                val res = Response(urlRoot, 400, data = "TEST".toByteArray())
-
-                handleResponse(promise, req, res)
             }
         }
 
@@ -132,24 +116,21 @@ class ApiClientTest : BaseFultonTest() {
             override val urlRoot: String = UrlRoot
 
             fun method1(): Promise<String, ApiError> {
-                return request {}
+                return request {
+                    mockResponse = Response(200, data = "1234".toByteArray())
+                }
             }
 
             fun method2(value: String): Promise<Int, ApiError> {
-                return request {}
-            }
-
-            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
-                val res = Response(urlRoot, 200, data = "1234".toByteArray())
-
-                handleResponse(promise, req, res)
+                return request {
+                    mockResponse = Response(200, data = "4567".toByteArray())
+                }
             }
         }
 
-
         val result: Int = apiClient.method1().then { apiClient.method2(it) }.await()!!
 
-        assertEquals(1234, result)
+        assertEquals(4567, result)
     }
 
     @Test()
@@ -163,11 +144,13 @@ class ApiClientTest : BaseFultonTest() {
                     method = Method.GET
                     paths = listOf("list")
                     subResultType = listOf(ModelA::class.java)
+
+                    mockResponse = Response(200, data = "4567".toByteArray())
                 }
             }
 
             override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
-                val res = Response(urlRoot, 200, data = json.toByteArray())
+                val res = Response(200, data = json.toByteArray())
 
                 handleResponse(promise, req, res)
             }
@@ -188,13 +171,9 @@ class ApiClientTest : BaseFultonTest() {
             override val urlRoot: String = UrlRoot
 
             fun get(): Promise<String?, ApiError> {
-                return request {}
-            }
-
-            override fun <T> execRequest(promise: Deferred<T, ApiError>, req: Request) {
-                val res = Response(urlRoot, 400, data = "TEST".toByteArray())
-
-                handleResponse(promise, req, res)
+                return request {
+                    mockResponse = Response(400, "TEST")
+                }
             }
         }
 
@@ -206,21 +185,34 @@ class ApiClientTest : BaseFultonTest() {
                 Log.d(TAG, "error called")
                 assertEquals(false, apiError.isHandled)
                 result = true
-
-                latch.countDown()
             }
         }
 
         apiClient.get()
                 .fail {
                     it.isHandled = false
+                }.always {
+                    latch.countDown()
                 }
 
         latch.await()
         assertEquals(true, result)
     }
+
+    @Test
+    fun unitTest() {
+        val apiClient = object : ApiClient() {
+            override val urlRoot: String = UrlRoot
+
+            fun get(): ApiPromise<Unit> {
+                return request {
+                    mockResponse = Response(200, "Test")
+                }
+            }
+        }
+
+        val result = apiClient.get().await()
+
+        assertEquals(Unit, result)
+    }
 }
-
-data class ModelA(val name: String, val index: Int, val list: List<ModelB>)
-
-data class ModelB(val name: String, val index: Int)

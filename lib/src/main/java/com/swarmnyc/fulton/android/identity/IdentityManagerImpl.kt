@@ -58,7 +58,7 @@ class IdentityManagerImpl(private val context: Context) : IdentityManager {
             if (_token == null) {
                 clear()
             } else {
-                _token!!.expires_at = System.currentTimeMillis() + (_token!!.expires_in * 1000)
+                _token!!.expiresAt = System.currentTimeMillis() + (_token!!.expiresIn * 1000)
                 parseJwt()
 
                 context.getSharedPreferences(SP_File, Context.MODE_PRIVATE).edit().apply {
@@ -83,12 +83,12 @@ class IdentityManagerImpl(private val context: Context) : IdentityManager {
         return if (_token == null) {
             false
         } else {
-            _token!!.expires_at > System.currentTimeMillis()
+            _token!!.expiresAt > System.currentTimeMillis()
         }
     }
 
     private fun parseJwt() {
-        val arr = _token!!.access_token.split(".")
+        val arr = _token!!.accessToken.split(".")
         if (arr.size == 3) {
             _user = arr[1].decodeBase64Url().fromJson()
         }

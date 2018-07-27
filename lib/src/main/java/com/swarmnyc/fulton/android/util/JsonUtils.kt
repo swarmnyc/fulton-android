@@ -56,6 +56,14 @@ fun Any.toJson(writer: Appendable) {
     gson.toJson(this, writer)
 }
 
+
+/**
+ * a extension of any object that convert it to json
+ */
+fun Any.toJsonBytes(): ByteArray {
+    return gson.toJson(this).toByteArray()
+}
+
 /**
  * a extension of string that convert it to a given typed object
  */

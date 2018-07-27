@@ -4,6 +4,7 @@ import android.util.Log
 import com.swarmnyc.fulton.android.*
 import com.swarmnyc.fulton.android.error.ApiError
 import com.swarmnyc.fulton.android.error.HttpApiError
+import com.swarmnyc.fulton.android.util.JsonGenericType
 import com.swarmnyc.fulton.android.util.fromJson
 import com.swarmnyc.fulton.android.util.toJson
 import nl.komponents.kovenant.deferred
@@ -70,6 +71,12 @@ abstract class ApiClient {
     protected open fun <T> execRequest(promise: ApiDeferred<T>, req: Request) {
         initRequest(req)
 
+        if (req.mockResponse != null) {
+            req.mockResponse!!.url = req.url!!
+            handleResponse(promise, req, req.mockResponse!!)
+            return
+        }
+
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             val msg = buildString {
                 appendln("--> ${req.method} (${req.url})")
@@ -135,7 +142,7 @@ abstract class ApiClient {
 
                 stream.close()
 
-                val res = Response(conn.url.toString(), conn.responseCode, conn.headerFields.filterKeys { it != null }, data)
+                val res = Response(conn.url.toString(), conn.responseCode, conn.headerFields.filterKeys { it != null }, data, null)
 
                 handleResponse(promise, req, res)
             }
@@ -182,10 +189,6 @@ abstract class ApiClient {
                 shouldCache = false
                 @Suppress("UNCHECKED_CAST")
                 Unit as T
-            }
-            String::class.java -> {
-                @Suppress("UNCHECKED_CAST")
-                String(res.data) as T
             }
             else -> {
                 res.data.fromJson(options.dataType!!)

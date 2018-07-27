@@ -75,6 +75,11 @@ class Request {
     }
 
     /**
+     * if the value is set, will use this response directly
+     */
+    var mockResponse: Response? = null
+
+    /**
      * the function of building url
      */
     fun buildUrl() {
