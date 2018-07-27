@@ -2,6 +2,7 @@ package com.swarmnyc.fulton.android.util
 
 import android.support.test.InstrumentationRegistry
 import com.swarmnyc.fulton.android.Fulton
+import com.swarmnyc.fulton.android.cache.VoidCacheManagrImpl
 import org.junit.Before
 import org.junit.BeforeClass
 
@@ -13,5 +14,6 @@ abstract class BaseFultonTest {
     @Before
     fun initEach() {
         Fulton.init(InstrumentationRegistry.getTargetContext())
+        Fulton.context.cacheManager = VoidCacheManagrImpl()
     }
 }

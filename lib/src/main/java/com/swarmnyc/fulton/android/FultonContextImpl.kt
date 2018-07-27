@@ -3,12 +3,12 @@ package com.swarmnyc.fulton.android
 import android.content.Context
 import com.swarmnyc.fulton.android.error.ApiErrorHandler
 import com.swarmnyc.fulton.android.cache.CacheManager
+import com.swarmnyc.fulton.android.cache.SqliteCacheManager
 import com.swarmnyc.fulton.android.cache.VoidCacheManagrImpl
 import com.swarmnyc.fulton.android.error.VoidApiErrorHandlerImpl
 import com.swarmnyc.fulton.android.http.*
 import com.swarmnyc.fulton.android.identity.IdentityManager
 import com.swarmnyc.fulton.android.identity.IdentityManagerImpl
-
 
 class FultonContextImpl(context: Context) : FultonContext {
     override var defaultCacheDurationMs: Int = 300_000 // 5 minutes
@@ -17,7 +17,7 @@ class FultonContextImpl(context: Context) : FultonContext {
     override var connectTimeoutMs: Int? = null
     override var errorHandler: ApiErrorHandler = VoidApiErrorHandlerImpl()
 
-    override var cacheManager: CacheManager = VoidCacheManagrImpl()
+    override var cacheManager: CacheManager = SqliteCacheManager(context)
     override var identityManager: IdentityManager = IdentityManagerImpl(context)
     override var requestExecutor: RequestExecutor = RequestExecutorImpl()
     override var mockRequestExecutor: RequestExecutor? = null

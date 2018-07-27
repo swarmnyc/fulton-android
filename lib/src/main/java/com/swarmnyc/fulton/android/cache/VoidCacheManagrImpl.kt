@@ -3,7 +3,7 @@ package com.swarmnyc.fulton.android.cache
 import java.lang.reflect.Type
 
 class VoidCacheManagrImpl : CacheManager {
-    override fun add(api: String, url: String, durationMs: Int, data: ByteArray) {
+    override fun add(cls: String, url: String, durationMs: Int, data: ByteArray) {
 
     }
 

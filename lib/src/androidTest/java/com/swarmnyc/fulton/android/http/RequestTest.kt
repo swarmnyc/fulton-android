@@ -49,4 +49,6 @@ class RequestTest : BaseFultonTest() {
 
         assertEquals("http://api.fulton.com/news?k1=a&k2=2&k3=%26", options.url)
     }
+
+    //TODO : query params test
 }
