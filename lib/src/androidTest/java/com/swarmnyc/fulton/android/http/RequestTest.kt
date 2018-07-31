@@ -52,34 +52,34 @@ class RequestTest : BaseFultonTest() {
     fun buildQpUrlTest() {
         val urlRoot = "http://api.fulton.com"
 
-        var options = Request()
-        options.urlRoot = urlRoot
-        options.paths = listOf("news")
-        options.buildUrl()
+        var request = Request()
+        request.urlRoot = urlRoot
+        request.paths = listOf("news")
+        request.buildUrl()
 
-        assertEquals("http://api.fulton.com/news", options.url)
+        assertEquals("http://api.fulton.com/news", request.url)
 
-        options = Request()
-        options.urlRoot = urlRoot
-        options.paths = listOf("/news")
-        options.buildUrl()
+        request = Request()
+        request.urlRoot = urlRoot
+        request.paths = listOf("/news")
+        request.buildUrl()
 
-        assertEquals("http://api.fulton.com/news", options.url)
+        assertEquals("http://api.fulton.com/news", request.url)
 
-        options = Request()
-        options.urlRoot = urlRoot
-        options.paths = listOf("news", "id")
-        options.buildUrl()
+        request = Request()
+        request.urlRoot = urlRoot
+        request.paths = listOf("news", "id")
+        request.buildUrl()
 
-        assertEquals("http://api.fulton.com/news/id", options.url)
+        assertEquals("http://api.fulton.com/news/id", request.url)
 
-        options = Request()
-        options.urlRoot = urlRoot
-        options.paths = listOf("/news")
-        options.query = mapOf("k1" to "a", "k2" to 2, "k3" to "&")
-        options.buildUrl()
+        request = Request()
+        request.urlRoot = urlRoot
+        request.paths = listOf("/news")
+        request.query = mapOf("k1" to "a", "k2" to 2, "k3" to "&")
+        request.buildUrl()
 
-        assertEquals("http://api.fulton.com/news?k1=a&k2=2&k3=%26", options.url)
+        assertEquals("http://api.fulton.com/news?k1=a&k2=2&k3=%26", request.url)
     }
 
     @Test

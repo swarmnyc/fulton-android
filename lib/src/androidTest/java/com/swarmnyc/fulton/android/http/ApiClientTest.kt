@@ -3,8 +3,8 @@ package com.swarmnyc.fulton.android.http
 import android.support.test.runner.AndroidJUnit4
 import android.util.Log
 import com.swarmnyc.fulton.android.Fulton
-import com.swarmnyc.fulton.android.error.ApiErrorHandler
 import com.swarmnyc.fulton.android.error.ApiError
+import com.swarmnyc.fulton.android.error.ApiErrorHandler
 import com.swarmnyc.fulton.android.model.ModelA
 import com.swarmnyc.fulton.android.model.ModelB
 import com.swarmnyc.fulton.android.model.TopDogAuthor
@@ -16,6 +16,7 @@ import com.swarmnyc.fulton.android.util.toJson
 import nl.komponents.kovenant.Deferred
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
+import nl.komponents.kovenant.then
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
@@ -131,9 +132,26 @@ class ApiClientTest : BaseFultonTest() {
             }
         }
 
-        val result: Int = apiClient.method1().then { apiClient.method2(it) }.await()!!
+        val result: Int = apiClient.method1().thenApi { apiClient.method2(it) }.await()!!
 
         assertEquals(4567, result)
+    }
+
+    @Test
+    fun requestJoin2Test() {
+        val apiClient = object : ApiClient() {
+            override val urlRoot: String = UrlRoot
+
+            fun method1(): Promise<String, ApiError> {
+                return request {
+                    mockResponse = Response(200, data = "1234".toByteArray())
+                }
+            }
+        }
+
+        val result: Int = apiClient.method1().then { 4321 }.await()!!
+
+        assertEquals(4321, result)
     }
 
     @Test()
