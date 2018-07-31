@@ -53,4 +53,17 @@ class SqliteCacheManagerTest {
 
         assertNull(result)
     }
+
+    @Test
+    fun cleanTest() {
+        val manager = SqliteCacheManager(InstrumentationRegistry.getTargetContext())
+        manager.add("test", "url1", 10000, "Test1".toByteArray())
+        manager.add("test", "url2", 10000, "Test2".toByteArray())
+
+        manager.clean()
+
+        val result =  manager.get<String>("url1", String::class.java)
+
+        assertNull(result)
+    }
 }

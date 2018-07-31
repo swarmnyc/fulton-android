@@ -21,7 +21,6 @@ class Request {
 
     var useGzip: Boolean = Fulton.context.defaultUseGzip
     var body: Any? = null
-    var queryParams: QueryParams? = null
 
     var startedAt = System.currentTimeMillis()
 
@@ -70,6 +69,12 @@ class Request {
      * */
     fun headers(vararg values: Pair<String, String>) {
         headers.putAll(values)
+    }
+
+    var queryParams: QueryParams? = null
+
+    fun queryParams(block: QueryParams.() -> Unit){
+        queryParams = QueryParams().apply(block)
     }
 
     /**

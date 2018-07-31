@@ -10,7 +10,7 @@ open class ApiError(cause: Exception) : Exception(cause.message, cause) {
 }
 
 open class HttpApiError(val request: Request, val response: Response) : ApiError(response.error!!) {
-    var status = response.status ?: 0
+    var status = response.status
 }
 
 /**

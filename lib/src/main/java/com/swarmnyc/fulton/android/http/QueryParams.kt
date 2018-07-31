@@ -2,6 +2,7 @@ package com.swarmnyc.fulton.android.http
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.swarmnyc.fulton.android.util.JsonObjectBuilder
 import com.swarmnyc.fulton.android.util.urlEncode
 
 /**
@@ -155,7 +156,7 @@ class QueryParams {
 
         query?.apply {
             if (this.isNotEmpty()) {
-                for ( (key, value) in this){
+                for ((key, value) in this) {
                     sb.append("$key=${value.urlEncode()}&")
                 }
             }
@@ -179,6 +180,13 @@ class QueryParams {
  * the DSL for query params
  */
 fun queryParams(block: QueryParams.() -> Unit): QueryParams = QueryParams().apply(block)
+
+/**
+ * the DSL for query params
+ */
+fun QueryParams.filter(block: JsonObjectBuilder.() -> Unit) {
+    filter = JsonObjectBuilder().json(block)
+}
 
 /**
  * the DSL for pagination

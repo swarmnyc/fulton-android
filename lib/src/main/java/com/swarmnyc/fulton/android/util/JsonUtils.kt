@@ -94,13 +94,13 @@ inline fun <reified T> ByteArray.fromJson(): T {
  * a DSL for json, for example
  * ``` json
  * json {
- *      "name" to "ilkin"
+ *      "name" to "fulton"
  *      "age" to 37
  *      "male" to true
- *      "birth" to Date()
+ *      "birthday" to Date()
  *      "contact" to json {
  *          "phones" to listOf("1223", "4567")
- *          "city" to "istanbul"
+ *          "city" to "ny"
  *          "email" to "xxx@yyy.com"
  *      }
  * }

@@ -103,13 +103,13 @@ abstract class ApiClient {
         }
     }
 
-    protected open fun <T> handleSuccess(deferred: ApiDeferred<T>, options: Request, res: Response) {
-        var shouldCache = options.method == Method.GET && options.cacheDurationMs > NO_CACHE
+    protected open fun <T> handleSuccess(deferred: ApiDeferred<T>, req: Request, res: Response) {
+        var shouldCache = req.method == Method.GET && req.cacheDurationMs > NO_CACHE
 
-        val dataType = if (options.dataType is JsonGenericType) {
-            (options.dataType as JsonGenericType).rawType
+        val dataType = if (req.dataType is JsonGenericType) {
+            (req.dataType as JsonGenericType).rawType
         } else {
-            options.dataType
+            req.dataType
         }
 
         val result: T = when (dataType) {
@@ -120,15 +120,15 @@ abstract class ApiClient {
             }
             ApiOneResult::class.java -> {
                 // result is { data : T }, but convert to return T, so when using can skip .data
-                res.data.fromJson<ApiOneResult<T>>(options.dataType!!).data
+                res.data.fromJson<ApiOneResult<T>>(req.dataType!!).data
             }
             else -> {
-                res.data.fromJson(options.dataType!!)
+                res.data.fromJson(req.dataType!!)
             }
         }
 
         if (shouldCache) {
-            cacheData(options.url!!, options.cacheDurationMs, res.data)
+            cacheData(req.url!!, req.cacheDurationMs, res.data)
         }
 
         deferred.resolve(result)

@@ -10,5 +10,5 @@ interface CacheManager {
 
     fun <T> get(url: String, type: Type): T?
 
-    fun clean(cls: String)
+    fun clean(cls: String? = null)
 }
