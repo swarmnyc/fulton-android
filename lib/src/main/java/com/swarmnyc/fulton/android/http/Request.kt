@@ -1,5 +1,6 @@
 package com.swarmnyc.fulton.android.http
 
+import android.net.Uri
 import com.swarmnyc.fulton.android.Fulton
 import com.swarmnyc.fulton.android.error.ApiError
 import com.swarmnyc.fulton.android.util.JsonGenericType
@@ -41,12 +42,12 @@ class Request {
     }
 
     /**
-     * get or set the query of the url
+     * get or set the query of the url, both of query and queryString will be added to url
      * */
     var query: Map<String, Any>? = null
 
     /**
-     * add the query of the url
+     * add the query of the url, both of query and queryString will be added to url
      * */
     fun query(vararg values: Pair<String, Any>) {
         if (this.query == null) {
@@ -55,6 +56,11 @@ class Request {
             this.query = this.query!! + values
         }
     }
+
+    /**
+     * get or set the query string of the url, both of query and queryString will be added to url
+     * */
+    var queryString: String? = null
 
     /**
      * get or set the headers of the request
@@ -73,7 +79,7 @@ class Request {
 
     var queryParams: QueryParams? = null
 
-    fun queryParams(block: QueryParams.() -> Unit){
+    fun queryParams(block: QueryParams.() -> Unit) {
         queryParams = QueryParams().apply(block)
     }
 
@@ -102,28 +108,31 @@ class Request {
      * the function of building url
      */
     fun buildUrl() {
-        val u = buildString {
-            append(urlRoot)
+        val builder = Uri.parse(urlRoot).buildUpon()
 
-            if (paths?.isNotEmpty() == true) {
-                paths!!.forEach { append("/$it") }
+        paths?.forEach {
+            val p = if (it.startsWith("/")) {
+                it.substring(1)
+            } else {
+                it
             }
 
-            if (queryParams != null) {
-                append(queryParams!!.toQueryString())
-            }
-
-            if (query?.isNotEmpty() == true) {
-                append("?")
-
-                append(query!!.entries.joinToString("&") {
-                    "${it.key}=${it.value.toString().urlEncode()}"
-                })
-            }
+            builder.appendEncodedPath(p)
         }
 
-        // the normalize doesn't remove double // on below API 21
-        this.url = URI.create(u).normalize().toString()
+        query?.forEach {
+            builder.appendQueryParameter(it.key, it.value.toString())
+        }
+
+        if (queryParams != null) {
+            builder.encodedQuery(getQuery(builder) + queryParams!!.toQueryString())
+        }
+
+        if (queryString != null) {
+            builder.encodedQuery(getQuery(builder) + queryString)
+        }
+
+        this.url = builder.build().toString()
     }
 
     fun buildDataType() {
@@ -137,6 +146,15 @@ class Request {
         if (dataType == null) return NullPointerException("Request.dataType cannot be null")
 
         return null
+    }
+
+    private fun getQuery(builder: Uri.Builder): String {
+        val q = builder.build().query
+        return if (q.isNullOrEmpty()) {
+            ""
+        } else {
+            "$q&"
+        }
     }
 }
 

@@ -123,10 +123,10 @@ class RequestTest : BaseFultonTest() {
 
         request.buildUrl()
 
-        val q = date.toJson().replace("\"","").urlEncode()
+        val q = date.toJson().replace("\"","")
 
-        println(request.url)
-        assertEquals("http://api.fulton.com/?filter[\$or][][title]=manager&filter[\$or][][title][\$regex]=sales&filter[\$or][][title][\$options]=i&filter[age]=37&filter[male]=true&filter[birth][\$lte]=$q&filter[city][\$in][]=NY&filter[city][\$in][]=NJ&sort=sort1%2Csort2-&projection=pro1%2Cpro2-&include=include1,include2.include2&pagination[index]=1&pagination[size]=100", request.url)
+//        println(request.url)
+        assertEquals("http://api.fulton.com/?filter[\$or][][title]=manager&filter[\$or][][title][\$regex]=sales&filter[\$or][][title][\$options]=i&filter[age]=37&filter[male]=true&filter[birth][\$lte]=$q&filter[city][\$in][]=NY&filter[city][\$in][]=NJ&sort=sort1,sort2-&projection=pro1,pro2-&include=include1,include2.include2&pagination[index]=1&pagination[size]=100", request.url)
     }
 
     @Test
@@ -181,8 +181,42 @@ class RequestTest : BaseFultonTest() {
 
         apiClient.test().await()
 
-        val q = date.toJson().replace("\"","").urlEncode()
+        val q = date.toJson().replace("\"","")
 
-        assertEquals("http://api.fulton.com/?filter[\$or][][title]=manager&filter[\$or][][title][\$regex]=sales&filter[\$or][][title][\$options]=i&filter[age]=37&filter[male]=true&filter[birth][\$lte]=$q&filter[city][\$in][]=NY&filter[city][\$in][]=NJ&sort=sort1%2Csort2-&projection=pro1%2Cpro2-&include=include1,include2.include2&pagination[index]=1&pagination[size]=100", request!!.url)
+        assertEquals("http://api.fulton.com/?filter[\$or][][title]=manager&filter[\$or][][title][\$regex]=sales&filter[\$or][][title][\$options]=i&filter[age]=37&filter[male]=true&filter[birth][\$lte]=$q&filter[city][\$in][]=NY&filter[city][\$in][]=NJ&sort=sort1,sort2-&projection=pro1,pro2-&include=include1,include2.include2&pagination[index]=1&pagination[size]=100", request!!.url)
+    }
+
+    @Test
+    fun queryTest() {
+        var request: Request? = null
+        val apiClient = object : ApiClient() {
+            override val urlRoot: String = "http://api.fulton.com/"
+
+            fun test() : ApiPromise<String>{
+                return request {
+                    queryParams {
+                        filter {
+                            "age" to 37
+                            "male" to true
+                        }
+                    }
+
+                    query("test1" to "abc")
+
+                    queryString = "test2=cba"
+
+                    mockResponse = Response(200)
+                }
+            }
+
+            override fun <T> handleSuccess(deferred: ApiDeferred<T>, req: Request, res: Response) {
+                request = req
+                super.handleSuccess(deferred, req, res)
+            }
+        }
+
+        apiClient.test().await()
+
+        assertEquals("http://api.fulton.com/?test1=abc&filter[age]=37&filter[male]=true&test2=cba", request!!.url)
     }
 }

@@ -37,14 +37,16 @@ abstract class ApiClient {
 
         builder(req)
 
-        if (req.url == null) req.buildUrl()
-
-        req.buildDataType()
-
         return request(req)
     }
 
     protected fun <T> request(req: Request): ApiPromise<T> {
+        initRequest(req)
+
+        if (req.url == null) req.buildUrl()
+
+        req.buildDataType()
+
         val deferred = deferred<T, ApiError>()
 
         // check request
@@ -76,8 +78,6 @@ abstract class ApiClient {
     }
 
     protected open fun <T> startRequest(deferred: ApiDeferred<T>, req: Request) {
-        initRequest(req)
-
         if (req.mockResponse != null) {
             req.mockResponse!!.url = req.url!!
             endRequest(deferred, req, req.mockResponse!!)

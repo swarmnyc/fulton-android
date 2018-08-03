@@ -62,7 +62,7 @@ class ApiClientTest : BaseFultonTest() {
         val apiClient = object : ApiClient() {
             override val urlRoot: String = UrlRoot
 
-            fun get(): Promise<Unit?, ApiError> {
+            fun get(): Promise<Unit?, Exception> {
                 return request {
                     mockResponse = Response(200)
                 }
@@ -132,7 +132,7 @@ class ApiClientTest : BaseFultonTest() {
             }
         }
 
-        val result: Int = apiClient.method1().thenApi { apiClient.method2(it) }.await()!!
+        val result: Int = apiClient.method1().thenFlat { apiClient.method2(it) }.await()!!
 
         assertEquals(4567, result)
     }
@@ -202,9 +202,9 @@ class ApiClientTest : BaseFultonTest() {
         var result = false
 
         Fulton.context.errorHandler = object : ApiErrorHandler {
-            override fun onError(apiError: ApiError) {
+            override fun onError(error: Exception) {
                 Log.d(TAG, "error called")
-                assertEquals(false, apiError.isHandled)
+                assertEquals(false, (error as ApiError).isHandled)
                 result = true
 
                 latch.countDown()

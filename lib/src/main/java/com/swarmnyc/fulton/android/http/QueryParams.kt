@@ -1,5 +1,6 @@
 package com.swarmnyc.fulton.android.http
 
+import android.net.Uri
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.swarmnyc.fulton.android.util.JsonObjectBuilder
@@ -91,25 +92,25 @@ class QueryParams {
     /**
      * convert json object to query string recursively
      */
-    private fun jsonToString(json: JsonElement, sb: StringBuilder, root: String) {
+    private fun jsonToString(json: JsonElement, builder: Uri.Builder, root: String) {
         when {
             json.isJsonObject -> json.asJsonObject.entrySet().forEach { (key, value) ->
                 // make array like root[key][]=value
                 if (value.isJsonArray) {
                     value.asJsonArray.forEach { item ->
-                        jsonToString(item, sb, "$root[$key][]")
+                        jsonToString(item, builder, "$root[$key][]")
                     }
                 } else {
-                    jsonToString(value, sb, "$root[$key]")
+                    jsonToString(value, builder, "$root[$key]")
                 }
             }
 
             json.isJsonArray -> json.asJsonArray.forEach { item ->
-                jsonToString(item, sb, "$root[]")
+                jsonToString(item, builder, "$root[]")
             }
 
             json.isJsonPrimitive -> {
-                sb.append("$root=${json.asString.urlEncode()}&")
+                builder.appendQueryParameter(root, json.asString)
             }
         }
     }
@@ -118,57 +119,51 @@ class QueryParams {
      * convert query params to query string
      */
     fun toQueryString(): String {
-        val sb = StringBuilder()
+        val builder = Uri.Builder()
 
         filter?.apply {
-            jsonToString(this, sb, "filter")
+            jsonToString(this, builder, "filter")
         }
 
         sort?.apply {
             if (this.isNotEmpty()) {
-                val str = this.map { it.key + if (it.value) "" else "-" }.joinToString(",")
-                sb.append("sort=${str.urlEncode()}&")
+                val s = this.map { it.key + if (it.value) "" else "-" }.joinToString(",")
+                builder.appendQueryParameter("sort", s)
             }
         }
 
         projection?.apply {
             if (this.isNotEmpty()) {
-                val str = this.map { it.key + if (it.value) "" else "-" }.joinToString(",")
-                sb.append("projection=${str.urlEncode()}&")
+                val s = this.map { it.key + if (it.value) "" else "-" }.joinToString(",")
+                builder.appendQueryParameter("projection", s)
             }
         }
 
         includes?.apply {
             if (this.isNotEmpty()) {
-                sb.append("include=" + this.joinToString(",", transform = { it.urlEncode() }) + "&")
+                builder.appendQueryParameter("include", this.joinToString(","))
             }
         }
 
         pagination?.apply {
             if (this.index != null) {
-                sb.append("pagination[index]=${this.index}&")
+                builder.appendQueryParameter("pagination[index]", this.index.toString())
             }
 
             if (this.size != null) {
-                sb.append("pagination[size]=${this.size}&")
+                builder.appendQueryParameter("pagination[size]", this.size.toString())
             }
         }
 
         query?.apply {
             if (this.isNotEmpty()) {
                 for ((key, value) in this) {
-                    sb.append("$key=${value.urlEncode()}&")
+                    builder.appendQueryParameter(key, value)
                 }
             }
         }
 
-        return if (sb.isNotEmpty()) {
-            sb.insert(0, "?")
-
-            sb.substring(0, sb.length - 1) // remove last &
-        } else {
-            ""
-        }
+        return builder.build().query
     }
 
     override fun toString(): String {

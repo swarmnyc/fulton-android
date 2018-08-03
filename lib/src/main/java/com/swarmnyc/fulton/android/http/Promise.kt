@@ -3,11 +3,11 @@ package com.swarmnyc.fulton.android.http
 import com.swarmnyc.fulton.android.error.ApiError
 import nl.komponents.kovenant.*
 
-typealias ApiPromise<T> = Promise<T, ApiError>
-typealias ApiDeferred<T> = Deferred<T, ApiError>
+internal typealias ApiPromise<T> = Promise<T, ApiError>
+internal typealias ApiDeferred<T> = Deferred<T, ApiError>
 
-infix fun <V, R> ApiPromise<V>.thenApi(bind: (V) -> ApiPromise<R>): ApiPromise<R> {
-    val deferred = deferred<R, ApiError>(context)
+infix fun <V, R> Promise<V, Exception>.thenFlat(bind: (V) -> Promise<R, Exception>): Promise<R, Exception> {
+    val deferred = deferred<R, Exception>(context)
     success {
         try {
             bind(it).success(deferred::resolve).fail(deferred::reject)
@@ -19,8 +19,8 @@ infix fun <V, R> ApiPromise<V>.thenApi(bind: (V) -> ApiPromise<R>): ApiPromise<R
     return deferred.promise
 }
 
-inline infix fun <V, R> ApiPromise<V>.thenApiApply(crossinline bind: V.() -> ApiPromise<R>): ApiPromise<R> {
-    val deferred = deferred<R, ApiError>(context)
+inline infix fun <V, R> Promise<V, Exception>.thenFlatApply(crossinline bind: V.() -> Promise<R, Exception>): Promise<R, Exception> {
+    val deferred = deferred<R, Exception>(context)
     success {
         try {
             bind(it).success(deferred::resolve).fail(deferred::reject)
@@ -30,9 +30,5 @@ inline infix fun <V, R> ApiPromise<V>.thenApiApply(crossinline bind: V.() -> Api
     }.fail(deferred::reject)
 
     return deferred.promise
-}
-
-fun <V> ofSuccess(value: V): ApiPromise<V> {
-    return Promise.ofSuccess(value)
 }
 
