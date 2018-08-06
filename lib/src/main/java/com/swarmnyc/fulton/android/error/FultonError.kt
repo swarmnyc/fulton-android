@@ -5,18 +5,15 @@ import com.swarmnyc.fulton.android.http.Response
 import com.swarmnyc.fulton.android.util.fromJson
 import java.util.*
 
-open class ApiError(cause: Throwable) : Exception(cause.message, cause) {
-    var isHandled: Boolean = false
-}
 
-open class HttpApiError(val request: Request, val response: Response) : ApiError(response.error!!) {
+open class HttpError(val request: Request, val response: Response) : Exception(response.error!!.message, response.error!!) {
     var status = response.status
 }
 
 /**
  * the class of api error
  */
-class FultonApiError(request: Request, response: Response) : HttpApiError(request, response) {
+class FultonError(request: Request, response: Response) : HttpError(request, response) {
     var code: String
         private set
 

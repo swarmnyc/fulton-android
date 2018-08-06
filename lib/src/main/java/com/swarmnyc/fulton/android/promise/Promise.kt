@@ -31,15 +31,15 @@ class Promise<V> {
         }
 
         fun <T> resolve(v: T): Promise<T> {
-            return Promise<T>().also {
-                it.resolve(v)
+            return Promise { resolve, _ ->
+                resolve(v)
             }
         }
 
         fun reject(e: Throwable): Promise<Any> {
-            return Promise<Any>().also {
-                it.shouldThrowError = false
-                it.reject(e)
+            return Promise { _, reject, promise ->
+                promise.shouldThrowError = false
+                reject(e)
             }
         }
 

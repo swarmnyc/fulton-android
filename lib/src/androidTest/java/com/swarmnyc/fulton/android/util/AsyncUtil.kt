@@ -1,6 +1,5 @@
 package com.swarmnyc.fulton.android.util
 
-import com.swarmnyc.fulton.android.error.ApiError
 import com.swarmnyc.fulton.android.promise.Promise
 import java.util.concurrent.CountDownLatch
 
@@ -20,9 +19,7 @@ fun <T> Promise<T>.await(): T? {
 
     latch.await()
     if (e != null) {
-        if ((e as? ApiError)?.isHandled != true) {
-            throw e!!
-        }
+        throw e!!
     }
 
     return t

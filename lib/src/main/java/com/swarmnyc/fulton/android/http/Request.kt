@@ -2,11 +2,8 @@ package com.swarmnyc.fulton.android.http
 
 import android.net.Uri
 import com.swarmnyc.fulton.android.Fulton
-import com.swarmnyc.fulton.android.error.ApiError
 import com.swarmnyc.fulton.android.util.JsonGenericType
-import com.swarmnyc.fulton.android.util.urlEncode
 import java.lang.reflect.Type
-import java.net.URI
 
 class Request {
     var connectionTimeOutMs = Fulton.context.connectTimeoutMs
@@ -25,6 +22,7 @@ class Request {
 
     var startedAt = System.currentTimeMillis()
 
+    var sendErrorToErrorHandler = true
     /**
      * get or set the path of the url
      * */

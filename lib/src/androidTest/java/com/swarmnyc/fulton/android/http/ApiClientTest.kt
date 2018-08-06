@@ -3,22 +3,17 @@ package com.swarmnyc.fulton.android.http
 import android.support.test.runner.AndroidJUnit4
 import android.util.Log
 import com.swarmnyc.fulton.android.Fulton
-import com.swarmnyc.fulton.android.error.ApiError
 import com.swarmnyc.fulton.android.error.ApiErrorHandler
 import com.swarmnyc.fulton.android.model.ModelA
 import com.swarmnyc.fulton.android.model.ModelB
 import com.swarmnyc.fulton.android.model.TopDogAuthor
 import com.swarmnyc.fulton.android.model.TopDogPost
 import com.swarmnyc.fulton.android.promise.Promise
-import com.swarmnyc.fulton.android.promise.Reject
-import com.swarmnyc.fulton.android.promise.Resolve
 import com.swarmnyc.fulton.android.real.TopDogPostApiClient
 import com.swarmnyc.fulton.android.util.BaseFultonTest
 import com.swarmnyc.fulton.android.util.await
 import com.swarmnyc.fulton.android.util.toJson
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.CountDownLatch
@@ -82,39 +77,8 @@ class ApiClientTest : BaseFultonTest() {
         apiClient.get()
                 .catch {
                     result = it.cause?.message
-                    if (it is ApiError) it.isHandled = true
                 }.await()
 
-        assertEquals("TEST", result)
-    }
-
-    @Test @Ignore
-    fun errorOnSuccessTest() {
-        val apiClient = object : ApiClient() {
-            override val urlRoot: String = UrlRoot
-
-            fun get(): Promise<String> {
-                return request {
-                    mockResponse = Response(200)
-                }
-            }
-        }
-
-        var result: String? = null
-
-        val latch = CountDownLatch(1)
-        Fulton.context.errorHandler = ApiErrorHandler {
-            TODO()
-            result = it.message
-            latch.countDown()
-        }
-
-        apiClient.get()
-                .then {
-                    throw Exception("TEST")
-                }
-
-        latch.await()
         assertEquals("TEST", result)
     }
 
@@ -184,7 +148,7 @@ class ApiClientTest : BaseFultonTest() {
         assertEquals("B", result[1].name)
     }
 
-    @Test @Ignore
+    @Test
     fun errorHandleTest() {
         val apiClient = object : ApiClient() {
             override val urlRoot: String = UrlRoot
@@ -200,19 +164,13 @@ class ApiClientTest : BaseFultonTest() {
         var result = false
 
         Fulton.context.errorHandler = ApiErrorHandler {
-            TODO()
-
             Log.d(TAG, "error called")
-            assertEquals(false, (it as ApiError).isHandled)
             result = true
 
             latch.countDown()
         }
 
         apiClient.get()
-                .catch {
-                    if (it is ApiError) it.isHandled = false
-                }
 
         latch.await()
         assertEquals(true, result)

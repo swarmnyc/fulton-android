@@ -2,11 +2,8 @@ package com.swarmnyc.fulton.android.http
 
 import com.swarmnyc.fulton.android.Fulton
 import com.swarmnyc.fulton.android.FultonContext
-import com.swarmnyc.fulton.android.error.ApiError
-import com.swarmnyc.fulton.android.error.HttpApiError
+import com.swarmnyc.fulton.android.error.HttpError
 import com.swarmnyc.fulton.android.promise.Promise
-import com.swarmnyc.fulton.android.promise.Reject
-import com.swarmnyc.fulton.android.promise.Resolve
 import com.swarmnyc.fulton.android.util.JsonGenericType
 import com.swarmnyc.fulton.android.util.fromJson
 
@@ -68,7 +65,7 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
             }
         } else {
             @Suppress("UNCHECKED_CAST")
-            Promise.reject(ApiError(error)) as Promise<T>
+            Promise.reject(error) as Promise<T>
         }
     }
 
@@ -139,21 +136,18 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
 
         onError(apiError)
 
-        // TODO  error handle
-//        deferred.promise.fail {
-//            if (!it.isHandled) {
-//                context.errorHandler.onError(apiError)
-//            }
-//        }
+        if (req.sendErrorToErrorHandler){
+                context.errorHandler.onError(apiError)
+        }
 
         promise.reject(apiError)
     }
 
-    protected open fun createError(req: Request, res: Response): ApiError {
-        return HttpApiError(req, res)
+    protected open fun createError(req: Request, res: Response): Throwable {
+        return HttpError(req, res)
     }
 
-    protected open fun onError(error: ApiError) {}
+    protected open fun onError(error: Throwable) {}
 
     protected open fun cacheData(url: String, cache: Int, byteArray: ByteArray) {
         context.cacheManager.add(this.javaClass.simpleName, url, cache, byteArray)

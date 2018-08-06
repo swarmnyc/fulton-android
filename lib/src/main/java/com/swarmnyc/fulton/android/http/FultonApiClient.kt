@@ -1,8 +1,7 @@
 package com.swarmnyc.fulton.android.http
 
-import com.swarmnyc.fulton.android.error.ApiError
-import com.swarmnyc.fulton.android.error.FultonApiError
-import com.swarmnyc.fulton.android.error.HttpApiError
+import com.swarmnyc.fulton.android.error.FultonError
+import com.swarmnyc.fulton.android.error.HttpError
 import com.swarmnyc.fulton.android.promise.Promise
 
 /**
@@ -108,11 +107,11 @@ abstract class FultonApiClient : ApiClient() {
         }
     }
 
-    override fun createError(req: Request, res: Response): ApiError {
+    override fun createError(req: Request, res: Response): Throwable {
         return if (res.isJson) {
-            FultonApiError(req, res)
+            FultonError(req, res)
         } else {
-            HttpApiError(req, res)
+            HttpError(req, res)
         }
     }
 }
