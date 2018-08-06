@@ -92,6 +92,7 @@ class Promise<V> {
     private var executor: PromiseExecutor<V>? = null
     private var executorWithSelf: PromiseWithSelfExecutor<V>? = null
     private var shouldThrowError = true
+    private var parent: Promise<*>? = null
 
     private constructor() {
         this.options = defaultOptions
@@ -129,7 +130,8 @@ class Promise<V> {
         execute()
     }
 
-    private var state = AtomicInteger(PromiseState.Pending.ordinal)
+    internal var state = AtomicInteger(PromiseState.Pending.ordinal)
+
     private var value: V? = null
     private var error: Throwable? = null
     private var handlers = mutableListOf<PromiseHandler<V>>()
@@ -159,7 +161,6 @@ class Promise<V> {
 
     fun resolve(v: V) {
         if (state.get() != PromiseState.Pending.ordinal) return
-
 
         value = v
         state.set(PromiseState.Fulfilled.ordinal)
@@ -208,11 +209,17 @@ class Promise<V> {
     }
 
     fun cancel() {
+        if (state.get() != PromiseState.Pending.ordinal) return
+
+        state.set(PromiseState.Canceled.ordinal)
+
         future?.let {
             if (!it.isDone || !it.isCancelled) {
                 it.cancel(true)
             }
         }
+
+        parent?.cancel()
     }
 
     fun <R> then(thenHandler: ThenHandler<V, R>): Promise<R> {
@@ -226,6 +233,7 @@ class Promise<V> {
 
     private fun <R> thenInternal(thenHandler: ThenHandler<V, R>, threadExecutor: Executor?): Promise<R> {
         return Promise<R>(options).also { promise ->
+            promise.parent = this
             this.handle(PromiseHandler({
                 val action = Runnable {
                     try {
@@ -255,6 +263,7 @@ class Promise<V> {
 
     private fun <R> thenChainInternal(thenHandler: ThenChainHandler<V, R>, threadExecutor: Executor?): Promise<R> {
         return Promise<R>(options).also { promise ->
+            promise.parent = this
             this.handle(PromiseHandler({
                 val action = Runnable {
                     try {
@@ -285,6 +294,7 @@ class Promise<V> {
 
     private fun catchInternal(failHandler: FailHandler, threadExecutor: Executor?): Promise<V> {
         return Promise<V>(this.options).also { promise ->
+            promise.parent = this
             this.handle(PromiseHandler(null) {
                 val action = Runnable {
                     try {

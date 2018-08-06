@@ -535,11 +535,29 @@ class PromiseTest {
     }
 
     @Test
-    fun jestTest() {
-        val a = Promise.reject(Throwable("Test"))
+    fun cancelTest() {
+        val latch = CountDownLatch(1)
 
-        a.catch {
-
+        val executor1: PromiseExecutor<String> = { resolve, _ ->
+            Thread.sleep(100000)
+            resolve("abc")
         }
+
+        val p = Promise(executor1)
+
+        p.then {
+            fail()
+        }.catch {
+            fail()
+        }
+
+        Promise.defaultOptions.executor.submit {
+            p.cancel()
+
+            assertEquals(PromiseState.Canceled.ordinal, p.state.get())
+            latch.countDown()
+        }
+
+        latch.await()
     }
 }
