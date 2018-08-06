@@ -265,20 +265,16 @@ class PromiseTest {
     }
 
     @Test
-    @Ignore
     fun uncaughtTest() {
         val latch = CountDownLatch(1)
         val error = Throwable("Test")
         var result: Throwable? = null
 
         val old = Promise.uncaughtError
-        Promise.uncaughtError  = {
+        Promise.uncaughtError = {
             result = it
             latch.countDown()
         }
-
-        // fine for
-        Promise.reject(error).await()
 
         val executor: PromiseExecutor<String> = { _, _ ->
             throw error
@@ -294,32 +290,65 @@ class PromiseTest {
     }
 
     @Test
-    @Ignore
     fun uncaught2Test() {
-        val latch = CountDownLatch(2)
+        val latch = CountDownLatch(1)
         val error1 = Throwable("Test1")
         val error2 = Throwable("Test2")
-        var result1: Throwable? = null
-        var result2: Throwable? = null
+        var result: Throwable? = null
 
-
+        val old = Promise.uncaughtError
         Promise.uncaughtError = {
-            result2 = it
+            result = it
             latch.countDown()
         }
 
-        Promise.reject(error1).then {
+        val executor: PromiseExecutor<String> = { _, _ ->
+            throw error1
+        }
+
+        Promise(executor = executor).then {
             fail()
         }.catch {
-            result1 = it
-            latch.countDown()
+            throw error1
+        }.catch {
+            throw error1
+        }.catch {
+            throw error1
+        }.then {
+            fail()
+        }.catch {
             throw error2
         }
 
         latch.await()
 
-        assertEquals(error1, result1)
-        assertEquals(error2, result2)
+        assertEquals(error2, result)
+
+        Promise.uncaughtError = old
+    }
+
+    @Test
+    fun uncaught3Test() {
+        val latch = CountDownLatch(1)
+        val error = Throwable("Test1")
+        var result: Throwable? = null
+
+        Promise.uncaughtError = {
+            result = it
+            latch.countDown()
+        }
+
+        Promise.resolve("Abc").then {
+            123
+        }.then {
+            throw error
+        }.then {
+            false
+        }
+
+        latch.await()
+
+        assertEquals(error, result)
     }
 
     @Test

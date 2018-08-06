@@ -38,6 +38,7 @@ class Promise<V> {
 
         fun reject(e: Throwable): Promise<Any> {
             return Promise<Any>().also {
+                it.shouldThrowError = false
                 it.reject(e)
             }
         }
@@ -90,6 +91,7 @@ class Promise<V> {
     private var options: PromiseOptions
     private var executor: PromiseExecutor<V>? = null
     private var executorWithSelf: PromiseWithSelfExecutor<V>? = null
+    private var shouldThrowError = true
 
     private constructor() {
         this.options = defaultOptions
@@ -175,7 +177,7 @@ class Promise<V> {
 
         if (handlers.size == 0) {
             // no child
-            if (executor != null || executorWithSelf != null) {
+            if (shouldThrowError) {
                 Promise.uncaughtError(e)
             }
         } else {
@@ -287,6 +289,7 @@ class Promise<V> {
                 val action = Runnable {
                     try {
                         failHandler(it)
+                        promise.shouldThrowError = false
                         promise.reject(it)
                     } catch (e: Throwable) {
                         promise.reject(e)

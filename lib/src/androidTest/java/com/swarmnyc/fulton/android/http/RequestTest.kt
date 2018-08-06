@@ -224,9 +224,4 @@ class RequestTest : BaseFultonTest() {
 
         assertEquals("http://api.fulton.com/?test1=abc&filter[age]=37&filter[male]=true&test2=cba", request!!.url)
     }
-
-    @Test
-    fun test() {
-        assertNotNull("".fromJson<TopDogAuthor>())
-    }
 }
