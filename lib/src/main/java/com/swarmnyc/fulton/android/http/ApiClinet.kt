@@ -1,11 +1,15 @@
 package com.swarmnyc.fulton.android.http
 
-import com.swarmnyc.fulton.android.*
+import com.swarmnyc.fulton.android.Fulton
+import com.swarmnyc.fulton.android.FultonContext
 import com.swarmnyc.fulton.android.error.ApiError
 import com.swarmnyc.fulton.android.error.HttpApiError
+import com.swarmnyc.fulton.android.promise.Promise
+import com.swarmnyc.fulton.android.promise.Reject
+import com.swarmnyc.fulton.android.promise.Resolve
 import com.swarmnyc.fulton.android.util.JsonGenericType
 import com.swarmnyc.fulton.android.util.fromJson
-import nl.komponents.kovenant.deferred
+
 
 /**
  * Base Api Client, supports
@@ -13,7 +17,7 @@ import nl.komponents.kovenant.deferred
  * - async
  * - cache
  * */
-abstract class ApiClient {
+abstract class ApiClient(val context: FultonContext = Fulton.context) {
     companion object {
         const val TAG = "fulton.api"
         const val GZip = "gzip"
@@ -22,15 +26,13 @@ abstract class ApiClient {
 
     protected abstract val urlRoot: String
 
-    protected var context: FultonContext = Fulton.context
-
     /**
      * init request, like set headers
      * */
     open fun initRequest(req: Request) {
     }
 
-    protected inline fun <reified T> request(builder: Request.() -> Unit): ApiPromise<T> {
+    protected inline fun <reified T> request(builder: Request.() -> Unit): Promise<T> {
         val req = Request()
         req.urlRoot = urlRoot
         req.dataType = T::class.java
@@ -40,70 +42,64 @@ abstract class ApiClient {
         return request(req)
     }
 
-    protected fun <T> request(req: Request): ApiPromise<T> {
+    protected fun <T> request(req: Request): Promise<T> {
         initRequest(req)
 
         if (req.url == null) req.buildUrl()
 
         req.buildDataType()
 
-        val deferred = deferred<T, ApiError>()
-
         // check request
         val error = req.verify()
 
-        if (error == null) {
-            deferred.promise.context.workerContext.offer {
-                try {
-                    if (req.method == Method.GET && req.cacheDurationMs > NO_CACHE) {
-                        val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.dataType!!)
-                        if (cacheResult != null) {
-                            // cache hits
-                            deferred.resolve(cacheResult)
+        return if (error == null) {
+            Promise { resolve, _, promise ->
+                if (req.method == Method.GET && req.cacheDurationMs > NO_CACHE) {
+                    val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.dataType!!)
+                    if (cacheResult != null) {
+                        // cache hits
+                        resolve(cacheResult)
 
-                            return@offer
-                        }
+                        return@Promise
                     }
-
-                    startRequest(deferred, req)
-                } catch (e: Exception) {
-                    deferred.reject(ApiError(e))
                 }
+
+                startRequest(promise, req)
             }
         } else {
-            deferred.reject(ApiError(error))
+            @Suppress("UNCHECKED_CAST")
+            Promise.reject(ApiError(error)) as Promise<T>
         }
-
-        return deferred.promise
     }
 
-    protected open fun <T> startRequest(deferred: ApiDeferred<T>, req: Request) {
+    protected open fun <T> startRequest(promise: Promise<T>, req: Request) {
         if (req.mockResponse != null) {
             req.mockResponse!!.url = req.url!!
-            endRequest(deferred, req, req.mockResponse!!)
+            endRequest(promise, req, req.mockResponse!!)
             return
         }
 
         val executor = context.mockRequestExecutor ?: context.requestExecutor
 
         executor.execute(req) { request, response ->
-            endRequest(deferred, request, response)
+            endRequest(promise, request, response)
         }
     }
 
-    protected open fun <T> endRequest(deferred: ApiDeferred<T>, req: Request, res: Response) {
+    protected open fun <T> endRequest(promise: Promise<T>, req: Request, res: Response) {
         if (res.error == null) {
             try {
-                handleSuccess(deferred, req, res)
+                handleSuccess(promise, req, res)
             } catch (e: Throwable) {
-                handelError(deferred, req, res)
+                res.error = e
+                handelError(promise, req, res)
             }
         } else {
-            handelError(deferred, req, res)
+            handelError(promise, req, res)
         }
     }
 
-    protected open fun <T> handleSuccess(deferred: ApiDeferred<T>, req: Request, res: Response) {
+    protected open fun <T> handleSuccess(promise: Promise<T>, req: Request, res: Response) {
         var shouldCache = req.method == Method.GET && req.cacheDurationMs > NO_CACHE
 
         val dataType = if (req.dataType is JsonGenericType) {
@@ -127,29 +123,30 @@ abstract class ApiClient {
             }
         }
 
-        if (shouldCache) {
-            cacheData(req.url!!, req.cacheDurationMs, res.data)
-        }
-
-        deferred.resolve(result)
-    }
-
-    protected open fun <T> handelError(deferred: ApiDeferred<T>, req: Request, res: Response) {
-        val apiError = createError(req, res)
-
-        try {
-            onError(apiError)
-
-            deferred.promise.fail {
-                if (!it.isHandled) {
-                    context.errorHandler.onError(apiError)
-                }
+        if (result == null) {
+            promise.reject(Exception("Api result is empty"))
+        } else {
+            if (shouldCache) {
+                cacheData(req.url!!, req.cacheDurationMs, res.data)
             }
 
-            deferred.reject(apiError)
-        } catch (e: Exception) {
-            throw Exception("Error Handle failed", e)
+            promise.resolve(result)
         }
+    }
+
+    protected open fun <T> handelError(promise: Promise<T>, req: Request, res: Response) {
+        val apiError = createError(req, res)
+
+        onError(apiError)
+
+        // TODO  error handle
+//        deferred.promise.fail {
+//            if (!it.isHandled) {
+//                context.errorHandler.onError(apiError)
+//            }
+//        }
+
+        promise.reject(apiError)
     }
 
     protected open fun createError(req: Request, res: Response): ApiError {

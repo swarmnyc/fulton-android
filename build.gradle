@@ -2,15 +2,7 @@
 
 buildscript {
     ext.versions = [
-            'compileSdk'    : 27,
-            'targetSdk'     : 27,
-            'buildTools'    : '27.0.3',
-            'glide'         : '4.6.1',
-            'kotlin'        : '1.2.51',
-            'koin'          : '0.9.2',
-            'anko'          : '0.10.4',
-            'supportLibrary': '27.1.1',
-            'playServices': '15.0.0'
+            'kotlin': '1.2.60',
     ]
 
     repositories {

@@ -3,6 +3,7 @@ package com.swarmnyc.fulton.android.http
 import com.swarmnyc.fulton.android.error.ApiError
 import com.swarmnyc.fulton.android.error.FultonApiError
 import com.swarmnyc.fulton.android.error.HttpApiError
+import com.swarmnyc.fulton.android.promise.Promise
 
 /**
  * Api Client for Fulton which is restFul styles api
@@ -25,7 +26,7 @@ abstract class FultonApiClient : ApiClient() {
     /**
      * make a GET request to get list of entities
      */
-    protected inline fun <reified T> list(queryParams: QueryParams? = null, noinline builder: (Request.() -> Unit)? = null): ApiPromise<ApiManyResult<T>> {
+    protected inline fun <reified T> list(queryParams: QueryParams? = null, noinline builder: (Request.() -> Unit)? = null): Promise<ApiManyResult<T>> {
         return request {
             this.subResultType(T::class.java)
 
@@ -38,7 +39,7 @@ abstract class FultonApiClient : ApiClient() {
     /**
      * make a GET request to get a single entity
      */
-    protected inline fun <reified T : Any> detail(id: Any, queryParams: QueryParams? = null, noinline builder: (Request.() -> Unit)? = null): ApiPromise<T> {
+    protected inline fun <reified T : Any> detail(id: Any, queryParams: QueryParams? = null, noinline builder: (Request.() -> Unit)? = null): Promise<T> {
         return request {
             // override the dataType because result is { data : T }, but convert to T, so when using can skip .data
             this.dataType = ApiOneResult::class.java
@@ -55,7 +56,7 @@ abstract class FultonApiClient : ApiClient() {
     /**
      * make POST request to create an entity
      */
-    protected inline fun <reified T : Any> create(entity: T, noinline builder: (Request.() -> Unit)? = null): ApiPromise<T> {
+    protected inline fun <reified T : Any> create(entity: T, noinline builder: (Request.() -> Unit)? = null): Promise<T> {
         return request {
             this.method = Method.POST
             this.dataType = ApiOneResult::class.java
@@ -69,7 +70,7 @@ abstract class FultonApiClient : ApiClient() {
     /**
      * make a Put request to update the entity
      */
-    protected fun <T> update(id: Any, entity: T, builder: (Request.() -> Unit)? = null): ApiPromise<Unit> {
+    protected fun <T> update(id: Any, entity: T, builder: (Request.() -> Unit)? = null): Promise<Unit> {
         return request {
             this.method = Method.PUT
             this.body = entity
@@ -83,7 +84,7 @@ abstract class FultonApiClient : ApiClient() {
     /**
      * make a Put request to update the partial of the entity
      */
-    protected fun update(id: Any, partialEntity: Map<String, Any>, builder: (Request.() -> Unit)? = null): ApiPromise<Unit> {
+    protected fun update(id: Any, partialEntity: Map<String, Any>, builder: (Request.() -> Unit)? = null): Promise<Unit> {
         return request {
             this.method = Method.PUT
             this.body = partialEntity
@@ -97,7 +98,7 @@ abstract class FultonApiClient : ApiClient() {
     /**
      * make a Delete request to delete the entity
      */
-    protected fun delete(id: Any, builder: (Request.() -> Unit)? = null): ApiPromise<Unit> {
+    protected fun delete(id: Any, builder: (Request.() -> Unit)? = null): Promise<Unit> {
         return request {
             this.method = Method.DELETE
 

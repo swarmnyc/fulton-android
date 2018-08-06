@@ -5,7 +5,7 @@ import com.swarmnyc.fulton.android.http.Response
 import com.swarmnyc.fulton.android.util.fromJson
 import java.util.*
 
-open class ApiError(cause: Exception) : Exception(cause.message, cause) {
+open class ApiError(cause: Throwable) : Exception(cause.message, cause) {
     var isHandled: Boolean = false
 }
 

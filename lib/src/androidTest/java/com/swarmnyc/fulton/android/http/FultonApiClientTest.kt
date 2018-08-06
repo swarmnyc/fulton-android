@@ -5,6 +5,9 @@ import com.swarmnyc.fulton.android.Fulton
 import com.swarmnyc.fulton.android.identity.AccessToken
 import com.swarmnyc.fulton.android.model.TopDogAuthor
 import com.swarmnyc.fulton.android.model.TopDogPost
+import com.swarmnyc.fulton.android.promise.Promise
+import com.swarmnyc.fulton.android.promise.Reject
+import com.swarmnyc.fulton.android.promise.Resolve
 import com.swarmnyc.fulton.android.util.BaseFultonTest
 import com.swarmnyc.fulton.android.util.await
 import org.junit.Assert.*
@@ -27,15 +30,15 @@ class FultonApiClientTest : BaseFultonTest() {
         val apiClient = object : FultonApiClient() {
             override val urlRoot: String = "http://api.fulton.com"
 
-            fun list(): ApiPromise<TopDogPost> {
+            fun list(): Promise<Unit> {
                 return request {
                     mockResponse = Response(200)
                 }
             }
 
-            override fun <T> endRequest(deferred: ApiDeferred<T>, req: Request, res: Response) {
-                super.endRequest(deferred, req, res)
+            override fun <T> endRequest(promise: Promise<T>, req: Request, res: Response) {
                 request = req
+                super.endRequest(promise, req, res)
             }
         }
 
@@ -52,7 +55,7 @@ class FultonApiClientTest : BaseFultonTest() {
         val apiClient = object : FultonApiClient() {
             override val urlRoot: String = "http://api.fulton.com"
 
-            fun listAuthor(): ApiPromise<ApiManyResult<TopDogAuthor>> {
+            fun listAuthor(): Promise<ApiManyResult<TopDogAuthor>> {
                 return list {
                     val data = ApiManyResult(listOf(TopDogAuthor("1", "Test1", "abc"), TopDogAuthor("2", "Test2", "efg")))
                     mockResponse = Response(200, data)
@@ -73,18 +76,17 @@ class FultonApiClientTest : BaseFultonTest() {
         val apiClient = object : FultonApiClient() {
             override val urlRoot: String = "http://api.fulton.com"
 
-            fun listAuthor(): ApiPromise<ApiManyResult<TopDogAuthor>> {
+            fun listAuthor(): Promise<ApiManyResult<TopDogAuthor>> {
                 return list {
                     paths("list", "abc")
 
-                    mockResponse = Response(200)
+                    mockResponse = Response(200 , data = ApiManyResult(listOf<TopDogAuthor>()))
                 }
             }
 
-            override fun <T> endRequest(deferred: ApiDeferred<T>, req: Request, res: Response) {
+            override fun <T> endRequest(promise: Promise<T>, req: Request, res: Response) {
                 request = req
-
-                super.endRequest(deferred, req, res)
+                super.endRequest(promise, req, res)
             }
         }
 
@@ -98,7 +100,7 @@ class FultonApiClientTest : BaseFultonTest() {
         val apiClient = object : FultonApiClient() {
             override val urlRoot: String = "http://api.fulton.com"
 
-            fun getAuthor(id: String): ApiPromise<TopDogAuthor> {
+            fun getAuthor(id: String): Promise<TopDogAuthor> {
                 return detail(id) {
                     val data = ApiOneResult(TopDogAuthor(id, "Test1", "abc"))
                     mockResponse = Response(200, data)
@@ -118,7 +120,7 @@ class FultonApiClientTest : BaseFultonTest() {
         val apiClient = object : FultonApiClient() {
             override val urlRoot: String = "http://api.fulton.com/authors"
 
-            fun getAuthor(id: String): ApiPromise<TopDogAuthor> {
+            fun getAuthor(id: String): Promise<TopDogAuthor> {
                 return detail(id) {
                     paths("self")
 
@@ -127,9 +129,9 @@ class FultonApiClientTest : BaseFultonTest() {
                 }
             }
 
-            override fun <T> endRequest(deferred: ApiDeferred<T>, req: Request, res: Response) {
+            override fun <T> endRequest(promise: Promise<T>, req: Request, res: Response) {
                 request = req
-                super.endRequest(deferred, req, res)
+                super.endRequest(promise, req, res)
             }
         }
 
@@ -143,7 +145,7 @@ class FultonApiClientTest : BaseFultonTest() {
         val apiClient = object : FultonApiClient() {
             override val urlRoot: String = "http://api.fulton.com/authors"
 
-            fun createAuthor(obj: TopDogAuthor): ApiPromise<TopDogAuthor> {
+            fun createAuthor(obj: TopDogAuthor): Promise<TopDogAuthor> {
                 return create(obj) {
                     mockResponse = Response(201, ApiOneResult(obj))
                 }
@@ -160,7 +162,7 @@ class FultonApiClientTest : BaseFultonTest() {
         val apiClient = object : FultonApiClient() {
             override val urlRoot: String = "http://api.fulton.com/authors"
 
-            fun update(obj: TopDogAuthor): ApiPromise<Unit> {
+            fun update(obj: TopDogAuthor): Promise<Unit> {
                 return super.update(obj.id, obj) {
                     mockResponse = Response(202)
                 }
@@ -175,7 +177,7 @@ class FultonApiClientTest : BaseFultonTest() {
         val apiClient = object : FultonApiClient() {
             override val urlRoot: String = "http://api.fulton.com/authors"
 
-            fun update(id: String, obj: Map<String, Any>): ApiPromise<Unit> {
+            fun update(id: String, obj: Map<String, Any>): Promise<Unit> {
                 return super.update(id, obj) {
                     mockResponse = Response(202)
                 }
@@ -190,7 +192,7 @@ class FultonApiClientTest : BaseFultonTest() {
         val apiClient = object : FultonApiClient() {
             override val urlRoot: String = "http://api.fulton.com/authors"
 
-            fun delete(id: String): ApiPromise<Unit> {
+            fun delete(id: String): Promise<Unit> {
                 return delete(id) {
                     mockResponse = Response(202)
                 }

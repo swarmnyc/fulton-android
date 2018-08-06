@@ -1,8 +1,13 @@
 package com.swarmnyc.fulton.android.http
 
 import android.support.test.runner.AndroidJUnit4
+import com.swarmnyc.fulton.android.model.TopDogAuthor
+import com.swarmnyc.fulton.android.promise.Promise
+import com.swarmnyc.fulton.android.promise.Reject
+import com.swarmnyc.fulton.android.promise.Resolve
 import com.swarmnyc.fulton.android.util.*
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.*
@@ -123,7 +128,7 @@ class RequestTest : BaseFultonTest() {
 
         request.buildUrl()
 
-        val q = date.toJson().replace("\"","")
+        val q = date.toJson().replace("\"", "")
 
 //        println(request.url)
         assertEquals("http://api.fulton.com/?filter[\$or][][title]=manager&filter[\$or][][title][\$regex]=sales&filter[\$or][][title][\$options]=i&filter[age]=37&filter[male]=true&filter[birth][\$lte]=$q&filter[city][\$in][]=NY&filter[city][\$in][]=NJ&sort=sort1,sort2-&projection=pro1,pro2-&include=include1,include2.include2&pagination[index]=1&pagination[size]=100", request.url)
@@ -136,7 +141,7 @@ class RequestTest : BaseFultonTest() {
         val apiClient = object : ApiClient() {
             override val urlRoot: String = "http://api.fulton.com/"
 
-            fun test() : ApiPromise<String>{
+            fun test(): Promise<Unit> {
                 return request {
                     queryParams {
                         filter {
@@ -173,15 +178,15 @@ class RequestTest : BaseFultonTest() {
                 }
             }
 
-            override fun <T> handleSuccess(deferred: ApiDeferred<T>, req: Request, res: Response) {
+            override fun <T> endRequest(promise: Promise<T>, req: Request, res: Response) {
                 request = req
-                super.handleSuccess(deferred, req, res)
+                super.endRequest(promise, req, res)
             }
         }
 
         apiClient.test().await()
 
-        val q = date.toJson().replace("\"","")
+        val q = date.toJson().replace("\"", "")
 
         assertEquals("http://api.fulton.com/?filter[\$or][][title]=manager&filter[\$or][][title][\$regex]=sales&filter[\$or][][title][\$options]=i&filter[age]=37&filter[male]=true&filter[birth][\$lte]=$q&filter[city][\$in][]=NY&filter[city][\$in][]=NJ&sort=sort1,sort2-&projection=pro1,pro2-&include=include1,include2.include2&pagination[index]=1&pagination[size]=100", request!!.url)
     }
@@ -192,7 +197,7 @@ class RequestTest : BaseFultonTest() {
         val apiClient = object : ApiClient() {
             override val urlRoot: String = "http://api.fulton.com/"
 
-            fun test() : ApiPromise<String>{
+            fun test(): Promise<Unit> {
                 return request {
                     queryParams {
                         filter {
@@ -209,14 +214,19 @@ class RequestTest : BaseFultonTest() {
                 }
             }
 
-            override fun <T> handleSuccess(deferred: ApiDeferred<T>, req: Request, res: Response) {
+            override fun <T> endRequest(promise: Promise<T>, req: Request, res: Response) {
                 request = req
-                super.handleSuccess(deferred, req, res)
+                super.endRequest(promise, req, res)
             }
         }
 
         apiClient.test().await()
 
         assertEquals("http://api.fulton.com/?test1=abc&filter[age]=37&filter[male]=true&test2=cba", request!!.url)
+    }
+
+    @Test
+    fun test() {
+        assertNotNull("".fromJson<TopDogAuthor>())
     }
 }

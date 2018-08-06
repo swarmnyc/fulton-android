@@ -1,8 +1,8 @@
 package com.swarmnyc.fulton.android.real
 
 import android.support.test.runner.AndroidJUnit4
-import com.swarmnyc.fulton.android.http.ApiClientTest
 import com.swarmnyc.fulton.android.error.HttpApiError
+import com.swarmnyc.fulton.android.http.ApiClientTest
 import com.swarmnyc.fulton.android.model.TopDogAuthor
 import com.swarmnyc.fulton.android.util.BaseFultonTest
 import com.swarmnyc.fulton.android.util.await
@@ -33,7 +33,7 @@ class ApiClientTest : BaseFultonTest() {
         val latch = CountDownLatch(1)
         var error: HttpApiError? = null
 
-        TopDogPostApiClient().error404().fail {
+        TopDogPostApiClient().error404().catch {
             latch.countDown()
 
             error = it as HttpApiError

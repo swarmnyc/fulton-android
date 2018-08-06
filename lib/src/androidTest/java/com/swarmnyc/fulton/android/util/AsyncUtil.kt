@@ -1,20 +1,20 @@
 package com.swarmnyc.fulton.android.util
 
 import com.swarmnyc.fulton.android.error.ApiError
-import nl.komponents.kovenant.Promise
+import com.swarmnyc.fulton.android.promise.Promise
 import java.util.concurrent.CountDownLatch
 
-fun <T> Promise<T?, Throwable>.await(): T? {
+fun <T> Promise<T>.await(): T? {
     val latch = CountDownLatch(1)
 
     var t: T? = null
     var e: Throwable? = null
 
-    this.success {
+    this.then {
         t = it
-    }.fail {
+        latch.countDown()
+    }.catch {
         e = it
-    }.always {
         latch.countDown()
     }
 

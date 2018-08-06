@@ -2,7 +2,7 @@ package com.swarmnyc.fulton.android.http
 
 import com.swarmnyc.fulton.android.util.toJsonBytes
 
-class Response(var url: String, val status: Int, val headers: Map<String, List<String>>, val data: ByteArray, var error: Exception?) {
+class Response(var url: String, val status: Int, val headers: Map<String, List<String>>, val data: ByteArray, var error: Throwable?) {
     constructor(error: Exception) : this("", -1, mapOf(), ByteArray(0), error)
     constructor(status: Int) : this("", status, mapOf(), ByteArray(0), null)
     constructor(status: Int, data: ByteArray) : this("", status, mapOf(), data, null)

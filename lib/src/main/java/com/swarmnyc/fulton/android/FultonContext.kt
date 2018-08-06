@@ -2,10 +2,10 @@ package com.swarmnyc.fulton.android
 
 import com.swarmnyc.fulton.android.cache.CacheManager
 import com.swarmnyc.fulton.android.error.ApiErrorHandler
-import com.swarmnyc.fulton.android.http.ApiPromise
 import com.swarmnyc.fulton.android.http.Request
 import com.swarmnyc.fulton.android.http.RequestExecutor
 import com.swarmnyc.fulton.android.identity.IdentityManager
+import com.swarmnyc.fulton.android.promise.Promise
 
 interface FultonContext {
     /**
@@ -45,7 +45,7 @@ interface FultonContext {
     /**
      * the lazy way to create request
      */
-    fun <T> request(builder: Request.() -> Unit): ApiPromise<T>
+    fun <T> request(builder: Request.() -> Unit): Promise<T>
 }
 
 

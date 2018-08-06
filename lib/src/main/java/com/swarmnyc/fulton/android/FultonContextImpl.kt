@@ -4,11 +4,11 @@ import android.content.Context
 import com.swarmnyc.fulton.android.error.ApiErrorHandler
 import com.swarmnyc.fulton.android.cache.CacheManager
 import com.swarmnyc.fulton.android.cache.SqliteCacheManager
-import com.swarmnyc.fulton.android.cache.VoidCacheManagrImpl
 import com.swarmnyc.fulton.android.error.VoidApiErrorHandlerImpl
 import com.swarmnyc.fulton.android.http.*
 import com.swarmnyc.fulton.android.identity.IdentityManager
 import com.swarmnyc.fulton.android.identity.IdentityManagerImpl
+import com.swarmnyc.fulton.android.promise.Promise
 
 class FultonContextImpl(context: Context) : FultonContext {
     override var defaultCacheDurationMs: Int = 300_000 // 5 minutes
@@ -26,14 +26,14 @@ class FultonContextImpl(context: Context) : FultonContext {
         AnonymousApiClient()
     }
 
-    override fun <T> request(builder: Request.() -> Unit): ApiPromise<T> {
+    override fun <T> request(builder: Request.() -> Unit): Promise<T> {
         return apiClient.newRequest(builder)
     }
 
     class AnonymousApiClient : ApiClient() {
         override val urlRoot: String = ""
 
-        fun <T> newRequest(builder: Request.() -> Unit): ApiPromise<T> {
+        fun <T> newRequest(builder: Request.() -> Unit): Promise<T> {
             val req = Request()
 
             builder(req)
