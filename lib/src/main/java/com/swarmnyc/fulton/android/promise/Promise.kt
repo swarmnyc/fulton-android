@@ -241,6 +241,7 @@ class Promise<V> {
                 it.cancel(true)
 
                 if (shouldThrowErrorOnCancel) {
+                    // sometime thread doesn't cause Interrupted Exception, so we call reject manually
                     reject(InterruptedException())
                 }
 
@@ -255,8 +256,23 @@ class Promise<V> {
     /**
      * if the running time over the given time, cancel the promise
      */
-    fun timeout(ms: Long) {
+    fun timeout(ms: Long, throwError: Boolean = false): Promise<V> {
+        log { "Timeout Called, state=${PromiseState.valueOf(state.get())}" }
+        if (state.get() != PromiseState.Pending.ordinal) return this
 
+        this.options.executor.submit {
+            Thread.sleep(ms)
+
+            if (state.get() == PromiseState.Pending.ordinal) {
+                log { "Timeout, canceling" }
+
+                cancel(throwError)
+            } else {
+                log { "Timeout, Invalid, state=${PromiseState.valueOf(state.get())}" }
+            }
+        }
+
+        return this
     }
 
     fun <R> then(thenHandler: ThenHandler<V, R>): Promise<R> {

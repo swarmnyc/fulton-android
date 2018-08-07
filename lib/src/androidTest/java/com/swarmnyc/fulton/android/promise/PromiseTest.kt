@@ -17,6 +17,8 @@ class PromiseTest {
 
     @Test
     fun promiseTest() {
+        // test basic promise
+
         val latch = CountDownLatch(1)
         var result: String? = null
         val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
@@ -37,6 +39,8 @@ class PromiseTest {
 
     @Test
     fun thenTest() {
+        // test resolve and then
+
         val latch = CountDownLatch(1)
         var result: String? = null
         Promise.resolve("Abc").then {
@@ -51,6 +55,8 @@ class PromiseTest {
 
     @Test
     fun then2Test() {
+        // test two then, p1 -> p2 -> p3
+
         val latch = CountDownLatch(1)
         var result = 0
         val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
@@ -73,6 +79,8 @@ class PromiseTest {
 
     @Test
     fun then3Test() {
+        // test two then, p1 -> p2, p1 -> p3
+
         val latch = CountDownLatch(2)
 
         val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
@@ -94,6 +102,8 @@ class PromiseTest {
 
     @Test
     fun then4Test() {
+        // test three then, p1->p2->p4, p1->p3
+
         val latch = CountDownLatch(3)
 
         val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
@@ -126,13 +136,14 @@ class PromiseTest {
 
     @Test
     fun catchTest() {
+        // test catch error
+
         val latch = CountDownLatch(1)
         val error = Throwable("Test")
         var result: Throwable? = null
         val executor: PromiseLambdaExecutor<String> = { _, reject ->
             reject(error)
         }
-
 
         Promise(executor = executor).then {
             fail()
@@ -149,6 +160,8 @@ class PromiseTest {
 
     @Test
     fun catchFailOnExecTest() {
+        // test catch fail on executor
+
         val latch = CountDownLatch(1)
         val error = Throwable("Test")
         var result: Throwable? = null
@@ -170,6 +183,8 @@ class PromiseTest {
 
     @Test
     fun catchFailOnThenTest() {
+        // test catch fail on then
+        
         val latch = CountDownLatch(2)
         val error = Throwable("Test")
         var result: Throwable? = null
@@ -192,6 +207,8 @@ class PromiseTest {
 
     @Test
     fun catchFailOnThen2Test() {
+        // test catch fail by p1->p2->catch, p1->p3->then
+        
         val latch = CountDownLatch(3)
         val error = Throwable("Test")
         var result: Throwable? = null
@@ -223,6 +240,8 @@ class PromiseTest {
 
     @Test
     fun catchRejectTest() {
+        // test two catch
+        
         val latch = CountDownLatch(2)
         val error = Throwable("Test")
         var result1: Throwable? = null
@@ -246,6 +265,8 @@ class PromiseTest {
 
     @Test
     fun catchReject2Test() {
+        // test two catch, and first catch throw new error
+        
         val latch = CountDownLatch(1)
         val error1 = Throwable("Test1")
         val error2 = Throwable("Test2")
@@ -265,6 +286,8 @@ class PromiseTest {
 
     @Test
     fun uncaughtTest() {
+        // test to throw uncaught error on root promise
+        
         val latch = CountDownLatch(1)
         val error = Throwable("Test")
         var result: Throwable? = null
@@ -290,6 +313,8 @@ class PromiseTest {
 
     @Test
     fun uncaught2Test() {
+        // test to throw uncaught error on child promise's catch 
+        
         val latch = CountDownLatch(1)
         val error1 = Throwable("Test1")
         val error2 = Throwable("Test2")
@@ -328,6 +353,8 @@ class PromiseTest {
 
     @Test
     fun uncaught3Test() {
+        // test to throw uncaught error on child promise 
+
         val latch = CountDownLatch(1)
         val error = Throwable("Test1")
         var result: Throwable? = null
@@ -351,9 +378,10 @@ class PromiseTest {
     }
 
 
-
     @Test
     fun chainTest() {
+        // test promise chain
+        
         val latch = CountDownLatch(1)
         var result = 0
         val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
@@ -377,7 +405,8 @@ class PromiseTest {
 
     @Test
     fun treadTest() {
-        // there will create 3 thread, 1. main thread, 2. promise body thread 3. result(success, fail, always) thread
+        // test multi-threads, there will create 3 thread, 1. main thread, 2. promise body thread 3. result(success, fail, always) thread
+        
         val mainThread = Thread.currentThread().id
         val executorThread = AtomicLong(0)
         val then1Thread = AtomicLong(0)
@@ -434,6 +463,8 @@ class PromiseTest {
 
     @Test
     fun allThenTest() {
+        // test promise.all success
+        
         val latch = CountDownLatch(1)
         val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
             Thread.sleep(200)
@@ -459,6 +490,8 @@ class PromiseTest {
 
     @Test
     fun allFailTest() {
+        // test promise.all with error
+
         val latch = CountDownLatch(1)
         val error = Throwable("Test")
         var result: Throwable? = null
@@ -487,6 +520,8 @@ class PromiseTest {
 
     @Test
     fun raceTest() {
+        // test promise.race
+
         val latch = CountDownLatch(1)
         var result = ""
 
@@ -512,6 +547,8 @@ class PromiseTest {
 
     @Test
     fun raceFailTest() {
+        // test promise.race with error
+
         val latch = CountDownLatch(1)
         var result = ""
 
@@ -537,6 +574,8 @@ class PromiseTest {
 
     @Test
     fun cancelTest() {
+        // test cancel promise without error
+
         val latch = CountDownLatch(1)
 
         val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
@@ -565,7 +604,8 @@ class PromiseTest {
 
     @Test
     fun cancel2Test() {
-        // cancel on root promise and cause error and catch it.
+        // test cancel on root promise and cause error and catch it.
+
         val latch = CountDownLatch(1)
         var result: Throwable? = null
         val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
@@ -594,7 +634,8 @@ class PromiseTest {
 
     @Test
     fun cancel3Test() {
-        // cancel on child promise and cause error and catch it.
+        // test cancel on child promise and cause error and catch it.
+
         val latch = CountDownLatch(1)
         var result: Throwable? = null
         val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
@@ -616,5 +657,98 @@ class PromiseTest {
         latch.await()
 
         assertTrue(result is InterruptedException)
+    }
+
+    @Test
+    fun timeoutTest() {
+        // test timeout on root promise and cause error and catch it.
+
+        val latch = CountDownLatch(1)
+        var result: Throwable? = null
+        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+            Thread.sleep(100000)
+            resolve("abc")
+        }
+
+        Promise(executor1).timeout(1000, true).then {
+            fail()
+        }.catch {
+            result = it
+            latch.countDown()
+        }
+
+        latch.await()
+
+        assertTrue(result is InterruptedException)
+    }
+
+    @Test
+    fun timeout2Test() {
+        // test timeout on child promise and cause error and catch it.
+
+        val latch = CountDownLatch(1)
+        var result: Throwable? = null
+        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+            Thread.sleep(100000)
+            resolve("abc")
+        }
+
+        Promise(executor1).then {
+            fail()
+        }.catch {
+            result = it
+            latch.countDown()
+        }.timeout(1000, true)
+
+        latch.await()
+
+        assertTrue(result is InterruptedException)
+    }
+
+    @Test
+    fun timeout3Test() {
+        // test timeout, but the promise is finished.
+
+        val latch = CountDownLatch(1)
+        var result: String? = null
+        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+            resolve("abc")
+        }
+
+        Promise(executor1).then {
+            result = it
+            latch.countDown()
+        }.catch {
+            fail()
+
+        }.timeout(1000, true)
+
+        latch.await()
+
+        assertEquals("abc", result)
+    }
+
+    @Test
+    fun timeout4Test() {
+        // test timeout, but the promise is finished by error.
+
+        val latch = CountDownLatch(1)
+        val error = Throwable("Test")
+        var result: Throwable? = null
+
+        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+            throw error
+        }
+
+        Promise(executor1).then {
+            fail()
+        }.catch {
+            result = it
+            latch.countDown()
+        }.timeout(1000, true)
+
+        latch.await()
+
+        assertEquals(error, result)
     }
 }
