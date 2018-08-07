@@ -6,8 +6,14 @@ import com.swarmnyc.fulton.android.util.readWriteLazy
 import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 open class PromiseOptions {
+    internal var debugMode = false
+    internal val idCounter: AtomicInteger by lazy {
+        AtomicInteger()
+    }
+
     //background executor
     var executor: ExecutorService by readWriteLazy {
         Executors.newCachedThreadPool { command ->

@@ -77,7 +77,7 @@ class ApiClientTest : BaseFultonTest() {
         apiClient.get()
                 .catch {
                     result = it.cause?.message
-                }.await()
+                }.await(false)
 
         assertEquals("TEST", result)
     }

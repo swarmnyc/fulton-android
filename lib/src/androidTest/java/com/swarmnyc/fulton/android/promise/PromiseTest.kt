@@ -351,6 +351,8 @@ class PromiseTest {
         assertEquals(error, result)
     }
 
+
+
     @Test
     fun chainTest() {
         val latch = CountDownLatch(1)
@@ -490,7 +492,7 @@ class PromiseTest {
         var result = ""
 
         val executor1: PromiseExecutor<String> = { resolve, _ ->
-            Thread.sleep(200)
+            Thread.sleep(500)
             resolve("Abc")
         }
 
@@ -554,10 +556,66 @@ class PromiseTest {
         Promise.defaultOptions.executor.submit {
             p.cancel()
 
-            assertEquals(PromiseState.Canceled.ordinal, p.state.get())
             latch.countDown()
         }
 
         latch.await()
+
+        assertEquals(PromiseState.Canceled.ordinal, p.state.get())
+    }
+
+    @Test
+    fun cancel2Test() {
+        // cancel on root promise and cause error and catch it.
+        val latch = CountDownLatch(1)
+        var result: Throwable? = null
+        val executor1: PromiseExecutor<String> = { resolve, _ ->
+            Thread.sleep(100000)
+            resolve("abc")
+        }
+
+        val p = Promise(executor1)
+
+        p.then {
+            fail()
+        }.catch {
+            result = it
+            latch.countDown()
+        }
+
+        Promise.defaultOptions.executor.submit {
+            p.cancel(true)
+        }
+
+        latch.await()
+
+        assertTrue(result is InterruptedException)
+
+    }
+
+    @Test
+    fun cancel3Test() {
+        // cancel on child promise and cause error and catch it.
+        val latch = CountDownLatch(1)
+        var result: Throwable? = null
+        val executor1: PromiseExecutor<String> = { resolve, _ ->
+            Thread.sleep(100000)
+            resolve("abc")
+        }
+
+        val p = Promise(executor1).then {
+            fail()
+        }.catch {
+            result = it
+            latch.countDown()
+        }
+
+        Promise.defaultOptions.executor.submit {
+            p.cancel(true)
+        }
+
+        latch.await()
+
+        assertTrue(result is InterruptedException)
     }
 }

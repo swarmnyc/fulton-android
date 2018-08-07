@@ -3,7 +3,7 @@ package com.swarmnyc.fulton.android.util
 import com.swarmnyc.fulton.android.promise.Promise
 import java.util.concurrent.CountDownLatch
 
-fun <T> Promise<T>.await(): T? {
+fun <T> Promise<T>.await(throwError: Boolean = true): T? {
     val latch = CountDownLatch(1)
 
     var t: T? = null
@@ -18,7 +18,7 @@ fun <T> Promise<T>.await(): T? {
     }
 
     latch.await()
-    if (e != null) {
+    if (e != null && throwError) {
         throw e!!
     }
 

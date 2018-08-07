@@ -51,6 +51,8 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
 
         return if (error == null) {
             Promise { resolve, _, promise ->
+                promise.shouldThrowUncaughtError = false
+
                 if (req.method == Method.GET && req.cacheDurationMs > NO_CACHE) {
                     val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.dataType!!)
                     if (cacheResult != null) {

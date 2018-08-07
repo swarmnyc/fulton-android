@@ -23,10 +23,11 @@ open class PromiseHandler<V>(val thenHandler: ThenHandler<V, *>?, val failHandle
  */
 class Promise<V> {
     companion object {
+        private const val TAG = "fulton.promise"
         var defaultOptions = PromiseOptions()
 
         var uncaughtError: Reject = {
-            Log.e("fulton.api", "Promise uncaught error", it)
+            Log.e(TAG, "Promise uncaught error", it)
             throw it
         }
 
@@ -38,7 +39,7 @@ class Promise<V> {
 
         fun reject(e: Throwable): Promise<Any> {
             return Promise { _, reject, promise ->
-                promise.shouldThrowError = false
+                promise.shouldThrowUncaughtError = false
                 reject(e)
             }
         }
@@ -88,25 +89,18 @@ class Promise<V> {
         }
     }
 
-    private var options: PromiseOptions
-    private var executor: PromiseExecutor<V>? = null
-    private var executorWithSelf: PromiseWithSelfExecutor<V>? = null
-    private var shouldThrowError = true
-    private var parent: Promise<*>? = null
-
     private constructor() {
         this.options = defaultOptions
+        log { "New" }
     }
 
-    constructor(executor: PromiseExecutor<V>) {
-        this.options = defaultOptions
+    constructor(executor: PromiseExecutor<V>) : this() {
         this.executor = executor
 
         execute()
     }
 
-    constructor(executor: PromiseWithSelfExecutor<V>) {
-        this.options = defaultOptions
+    constructor(executor: PromiseWithSelfExecutor<V>) : this() {
         this.executorWithSelf = executor
 
         execute()
@@ -114,35 +108,57 @@ class Promise<V> {
 
     private constructor(options: PromiseOptions) {
         this.options = options
+
+        log { "New" }
     }
 
-    constructor(options: PromiseOptions, executor: PromiseExecutor<V>) {
-        this.options = options
+    constructor(options: PromiseOptions, executor: PromiseExecutor<V>) : this(options) {
         this.executor = executor
 
         execute()
     }
 
-    constructor(options: PromiseOptions, executor: PromiseWithSelfExecutor<V>) {
-        this.options = options
+    constructor(options: PromiseOptions, executor: PromiseWithSelfExecutor<V>) : this(options) {
         this.executorWithSelf = executor
 
         execute()
     }
 
+    private lateinit var options: PromiseOptions
+
+    private var error: Throwable? = null
+    private var executor: PromiseExecutor<V>? = null
+    private var executorWithSelf: PromiseWithSelfExecutor<V>? = null
+    private var future: Future<*>? = null // only promise root has future
+    private var handlers = mutableListOf<PromiseHandler<V>>()
+    private var parent: Promise<*>? = null
+    private var shouldThrowErrorOnCancel = false
+    private var value: V? = null
+    private var executedAt: Long = 0
+    private val id: String by lazy {
+        "Promise@${options.idCounter.incrementAndGet()}"
+    }
+
+    internal var shouldThrowUncaughtError = true
     internal var state = AtomicInteger(PromiseState.Pending.ordinal)
 
-    private var value: V? = null
-    private var error: Throwable? = null
-    private var handlers = mutableListOf<PromiseHandler<V>>()
-    private var future: Future<*>? = null
-
     private fun execute() {
+        log { "Execute Called" }
+
+        executedAt = System.currentTimeMillis()
         executor?.let {
             future = options.executor.submit {
+                // delay for the main thread add .then and .catch handler
+                log { "Executing" }
+
+                Thread.sleep(1)
                 try {
                     it(::resolve, ::reject)
+                    log { "Executed" }
+                } catch (e: InterruptedException) {
+                    log { "Execution Interrupted" }
                 } catch (e: Throwable) {
+                    log { "Execution Failed, Error=$e" }
                     reject(e)
                 }
             }
@@ -150,9 +166,17 @@ class Promise<V> {
 
         executorWithSelf?.let {
             future = options.executor.submit {
+                // delay for the main thread add .then and .catch handler
+                log { "Executing" }
+
+                Thread.sleep(1)
                 try {
                     it(::resolve, ::reject, this)
+                    log { "Executed" }
+                } catch (e: InterruptedException) {
+                    log { "Execution Interrupted" }
                 } catch (e: Throwable) {
+                    log { "Execution Failed" }
                     reject(e)
                 }
             }
@@ -160,6 +184,8 @@ class Promise<V> {
     }
 
     fun resolve(v: V) {
+        log { "Resolve Called, state: ${PromiseState.valueOf(state.get())}, handlers=${handlers.size}, value = $v" }
+
         if (state.get() != PromiseState.Pending.ordinal) return
 
         value = v
@@ -171,14 +197,32 @@ class Promise<V> {
     }
 
     fun reject(e: Throwable) {
-        if (state.get() != PromiseState.Pending.ordinal) return
+        log {
+            "Reject Called, state: ${PromiseState.valueOf(state.get())}, handlers=${handlers.size}, " +
+                    "error = $e, shouldThrowErrorOnCancel=$shouldThrowErrorOnCancel, " +
+                    "shouldThrowUncaughtError=$shouldThrowUncaughtError"
+        }
+
+        when (state.get()) {
+            PromiseState.Canceled.ordinal -> {
+                if (!shouldThrowErrorOnCancel) {
+                    return
+                }
+
+                state.set(PromiseState.RejectedOnCancel.ordinal)
+            }
+            PromiseState.Pending.ordinal -> {
+                state.set(PromiseState.Rejected.ordinal)
+            }
+            else -> return
+        }
 
         error = e
-        state.set(PromiseState.Rejected.ordinal)
 
         if (handlers.size == 0) {
             // no child
-            if (shouldThrowError) {
+            if (shouldThrowUncaughtError) {
+                log { "Reject, not child, throw uncaught error" }
                 Promise.uncaughtError(e)
             }
         } else {
@@ -190,8 +234,12 @@ class Promise<V> {
 
     private fun handle(handler: PromiseHandler<V>) {
         when (state.get()) {
-            PromiseState.Pending.ordinal -> handlers.add(handler)
+            PromiseState.Pending.ordinal -> {
+                log { "Handle Pending, Add a handler" }
+                handlers.add(handler)
+            }
             PromiseState.Fulfilled.ordinal -> {
+                log { "Handle Fulfilled" }
                 try {
                     handler.thenHandler?.let {
                         it(value!!)
@@ -200,7 +248,8 @@ class Promise<V> {
                     reject(e)
                 }
             }
-            PromiseState.Rejected.ordinal -> {
+            PromiseState.Rejected.ordinal, PromiseState.RejectedOnCancel.ordinal -> {
+                log { "Handle Rejected" }
                 handler.failHandler?.let {
                     it(error!!)
                 }
@@ -208,18 +257,36 @@ class Promise<V> {
         }
     }
 
-    fun cancel() {
+    fun cancel(throwError: Boolean = false) {
+        log { "Cancel Called, state=${PromiseState.valueOf(state.get())}" }
         if (state.get() != PromiseState.Pending.ordinal) return
 
+        shouldThrowErrorOnCancel = throwError
         state.set(PromiseState.Canceled.ordinal)
 
         future?.let {
             if (!it.isDone || !it.isCancelled) {
+                log { "Canceling" }
+
                 it.cancel(true)
+
+                if (shouldThrowErrorOnCancel) {
+                    reject(InterruptedException())
+                }
+
+                log { "Canceled" }
             }
         }
 
-        parent?.cancel()
+        parent?.cancel(throwError)
+    }
+
+
+    /**
+     * if the running time over the given time, cancel the promise
+     */
+    fun timeout(ms: Long) {
+
     }
 
     fun <R> then(thenHandler: ThenHandler<V, R>): Promise<R> {
@@ -232,14 +299,18 @@ class Promise<V> {
     }
 
     private fun <R> thenInternal(thenHandler: ThenHandler<V, R>, threadExecutor: Executor?): Promise<R> {
+        log { "Then Called" }
         return Promise<R>(options).also { promise ->
             promise.parent = this
+
             this.handle(PromiseHandler({
                 val action = Runnable {
                     try {
+                        log { "ThenHandler Called" }
                         val r = thenHandler(it)
                         promise.resolve(r)
                     } catch (e: Throwable) {
+                        log { "ThenHandler Failed" }
                         promise.reject(e)
                     }
                 }
@@ -249,7 +320,10 @@ class Promise<V> {
                 } else {
                     threadExecutor.execute(action)
                 }
-            }, promise::reject))
+            }, {
+                log { "FailHandler Called" }
+                promise.reject(it)
+            }))
         }
     }
 
@@ -262,14 +336,20 @@ class Promise<V> {
     }
 
     private fun <R> thenChainInternal(thenHandler: ThenChainHandler<V, R>, threadExecutor: Executor?): Promise<R> {
+        log { "ThenChain Called" }
+
         return Promise<R>(options).also { promise ->
             promise.parent = this
             this.handle(PromiseHandler({
                 val action = Runnable {
                     try {
+                        promise.log { "ThenChainHandler Called" }
+
                         val p = thenHandler(it)
                         p.then(promise::resolve).catch(promise::reject)
                     } catch (e: Throwable) {
+                        promise.log { "ThenChainHandler Failed" }
+
                         promise.reject(e)
                     }
                 }
@@ -279,8 +359,10 @@ class Promise<V> {
                 } else {
                     threadExecutor.execute(action)
                 }
-
-            }, promise::reject))
+            }, {
+                promise.log { "FailHandler Called" }
+                promise.reject(it)
+            }))
         }
     }
 
@@ -293,15 +375,19 @@ class Promise<V> {
     }
 
     private fun catchInternal(failHandler: FailHandler, threadExecutor: Executor?): Promise<V> {
+        log { "Catch Called" }
+
         return Promise<V>(this.options).also { promise ->
             promise.parent = this
             this.handle(PromiseHandler(null) {
                 val action = Runnable {
                     try {
+                        promise.log { "FailHandler Called" }
                         failHandler(it)
-                        promise.shouldThrowError = false
+                        promise.shouldThrowUncaughtError = false
                         promise.reject(it)
                     } catch (e: Throwable) {
+                        promise.log { "FailHandler failed" }
                         promise.reject(e)
                     }
                 }
@@ -312,6 +398,14 @@ class Promise<V> {
                     threadExecutor.execute(action)
                 }
             })
+        }
+    }
+
+    private inline fun log(block: () -> String) {
+        if (options.debugMode) {
+            val msg = "$id-${Thread.currentThread().id} : ${block()}"
+
+            Log.d(TAG, msg)
         }
     }
 }
