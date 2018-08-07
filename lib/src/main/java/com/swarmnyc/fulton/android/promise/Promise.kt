@@ -8,8 +8,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 typealias Resolve<V> = (V) -> Unit
 typealias Reject = (Throwable) -> Unit
-typealias PromiseExecutor<V> = (resolve: Resolve<V>, reject: Reject) -> Unit
-typealias PromiseWithSelfExecutor<V> = (resolve: Resolve<V>, reject: Reject, promise: Promise<V>) -> Unit
+typealias PromiseLambdaExecutor<V> = (resolve: Resolve<V>, reject: Reject) -> Unit
+typealias PromiseExecutor<V> = (promise: Promise<V>) -> Unit
 
 typealias ThenHandler<V, R> = (V) -> R
 typealias ThenChainHandler<V, R> = (V) -> Promise<R>
@@ -32,15 +32,15 @@ class Promise<V> {
         }
 
         fun <T> resolve(v: T): Promise<T> {
-            return Promise { resolve, _ ->
-                resolve(v)
+            return Promise { promise ->
+                promise.resolve(v)
             }
         }
 
         fun reject(e: Throwable): Promise<Any> {
-            return Promise { _, reject, promise ->
+            return Promise { promise ->
                 promise.shouldThrowUncaughtError = false
-                reject(e)
+                promise.reject(e)
             }
         }
 
@@ -89,27 +89,18 @@ class Promise<V> {
         }
     }
 
-    private constructor() {
-        this.options = defaultOptions
-        log { "New" }
-    }
-
-    constructor(executor: PromiseExecutor<V>) : this() {
-        this.executor = executor
-
-        execute()
-    }
-
-    constructor(executor: PromiseWithSelfExecutor<V>) : this() {
-        this.executorWithSelf = executor
-
-        execute()
-    }
-
     private constructor(options: PromiseOptions) {
         this.options = options
 
         log { "New" }
+    }
+
+    constructor(options: PromiseOptions, executor: PromiseLambdaExecutor<V>) : this(options) {
+        this.executor = {
+            executor(it::resolve, it::reject)
+        }
+
+        execute()
     }
 
     constructor(options: PromiseOptions, executor: PromiseExecutor<V>) : this(options) {
@@ -118,17 +109,14 @@ class Promise<V> {
         execute()
     }
 
-    constructor(options: PromiseOptions, executor: PromiseWithSelfExecutor<V>) : this(options) {
-        this.executorWithSelf = executor
-
-        execute()
-    }
+    private constructor() : this(defaultOptions)
+    constructor(executor: PromiseLambdaExecutor<V>) : this(defaultOptions, executor)
+    constructor(executor: PromiseExecutor<V>) : this(defaultOptions, executor)
 
     private lateinit var options: PromiseOptions
 
     private var error: Throwable? = null
     private var executor: PromiseExecutor<V>? = null
-    private var executorWithSelf: PromiseWithSelfExecutor<V>? = null
     private var future: Future<*>? = null // only promise root has future
     private var handlers = mutableListOf<PromiseHandler<V>>()
     private var parent: Promise<*>? = null
@@ -153,30 +141,12 @@ class Promise<V> {
 
                 Thread.sleep(1)
                 try {
-                    it(::resolve, ::reject)
+                    it(this)
                     log { "Executed" }
                 } catch (e: InterruptedException) {
                     log { "Execution Interrupted" }
                 } catch (e: Throwable) {
                     log { "Execution Failed, Error=$e" }
-                    reject(e)
-                }
-            }
-        }
-
-        executorWithSelf?.let {
-            future = options.executor.submit {
-                // delay for the main thread add .then and .catch handler
-                log { "Executing" }
-
-                Thread.sleep(1)
-                try {
-                    it(::resolve, ::reject, this)
-                    log { "Executed" }
-                } catch (e: InterruptedException) {
-                    log { "Execution Interrupted" }
-                } catch (e: Throwable) {
-                    log { "Execution Failed" }
                     reject(e)
                 }
             }

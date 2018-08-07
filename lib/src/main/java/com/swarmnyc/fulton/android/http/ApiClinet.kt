@@ -50,14 +50,14 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
         val error = req.verify()
 
         return if (error == null) {
-            Promise { resolve, _, promise ->
+            Promise { promise ->
                 promise.shouldThrowUncaughtError = false
 
                 if (req.method == Method.GET && req.cacheDurationMs > NO_CACHE) {
                     val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.dataType!!)
                     if (cacheResult != null) {
                         // cache hits
-                        resolve(cacheResult)
+                        promise.resolve(cacheResult)
 
                         return@Promise
                     }
@@ -138,8 +138,8 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
 
         onError(apiError)
 
-        if (req.sendErrorToErrorHandler){
-                context.errorHandler.onError(apiError)
+        if (req.sendErrorToErrorHandler) {
+            context.errorHandler.onError(apiError)
         }
 
         promise.reject(apiError)
