@@ -1,15 +1,17 @@
 package com.swarmnyc.fulton.android.identity
 
 import android.content.Context
+import com.swarmnyc.fulton.android.FultonInitOptions
 import com.swarmnyc.fulton.android.util.decodeBase64Url
 import com.swarmnyc.fulton.android.util.fromJson
 import com.swarmnyc.fulton.android.util.toJson
+import java.lang.reflect.Type
 
 
 /**
  * the class of Identity Manager, Use SharedPreferences to store accessToken and user
  * */
-class IdentityManagerImpl(private val context: Context) : IdentityManager {
+class IdentityManagerImpl(private val context: Context, options: FultonInitOptions) : IdentityManager {
     companion object {
         const val SP_File = "fulton_identify"
         const val Field_AccessToken = "access_token"
@@ -18,6 +20,7 @@ class IdentityManagerImpl(private val context: Context) : IdentityManager {
 
     private var _user: User? = null
     private var _token: AccessToken? = null
+    var userType: Type = options.userType
 
     init {
         // load data form shared preferences
@@ -29,7 +32,7 @@ class IdentityManagerImpl(private val context: Context) : IdentityManager {
         }
 
         sp?.getString(Field_User, null)?.apply {
-            _user = this.fromJson()
+            _user = this.fromJson(userType)
         }
     }
 

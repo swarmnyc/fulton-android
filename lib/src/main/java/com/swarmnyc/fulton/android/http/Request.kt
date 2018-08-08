@@ -6,8 +6,8 @@ import com.swarmnyc.fulton.android.util.JsonGenericType
 import java.lang.reflect.Type
 
 class Request {
-    var connectionTimeOutMs = Fulton.context.connectTimeoutMs
-    var readTimeOutMs = Fulton.context.readTimeOutMs
+    var connectionTimeOutMs = Fulton.context.defaultConnectTimeoutMs
+    var readTimeOutMs = Fulton.context.defaultReadTimeOutMs
     var method: Method = Method.GET
 
     var urlRoot: String? = null

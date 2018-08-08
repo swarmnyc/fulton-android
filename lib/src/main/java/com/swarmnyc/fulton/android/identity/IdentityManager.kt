@@ -1,5 +1,7 @@
 package com.swarmnyc.fulton.android.identity
 
+import java.lang.reflect.Type
+
 /**
  * IdentityManager manage user and user access token
  */

@@ -9,7 +9,7 @@ import com.swarmnyc.fulton.android.promise.Promise
 
 interface FultonContext {
     /**
-     * the default cache time, default value is 5 mins
+     * the default cache time
      */
     var defaultCacheDurationMs: Int
 
@@ -19,14 +19,14 @@ interface FultonContext {
     var defaultUseGzip: Boolean
 
     /**
-     * the default request, if true the http body will be gzip compressed
-     */
-    var readTimeOutMs: Int?
+     * the default request read time out
+     * */
+    var defaultReadTimeOutMs: Int?
 
-    var connectTimeoutMs: Int?
-
-    var identityManager : IdentityManager
-    var cacheManager: CacheManager
+    /**
+     * the default request connect time out
+     * */
+    var defaultConnectTimeoutMs: Int?
 
     /**
      * the global error handler
@@ -43,9 +43,14 @@ interface FultonContext {
     var mockRequestExecutor: RequestExecutor?
 
     /**
-     * the lazy way to create request
+     * the manager of identity, the default value is IdentityManagerImpl
      */
-    fun <T> request(builder: Request.() -> Unit): Promise<T>
+    var identityManager : IdentityManager
+
+    /**
+     * the manager of cache, the default value is SqliteCacheManager
+     */
+    var cacheManager: CacheManager
 }
 
 

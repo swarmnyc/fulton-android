@@ -213,7 +213,7 @@ class ApiClientTest : BaseFultonTest() {
 
     @Test
     fun anonymousApiClientTest() {
-        val result: TopDogAuthor = Fulton.context.request<TopDogAuthor> {
+        val result: TopDogAuthor = Fulton.request<TopDogAuthor> {
             urlRoot = "http://api.fulton.com"
             resultType = TopDogAuthor::class.java
             paths("authors", "1")

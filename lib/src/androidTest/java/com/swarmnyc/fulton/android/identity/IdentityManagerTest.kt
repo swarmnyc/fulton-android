@@ -3,6 +3,7 @@ package com.swarmnyc.fulton.android.identity
 import android.content.Context
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
+import com.swarmnyc.fulton.android.FultonInitOptions
 import com.swarmnyc.fulton.android.util.BaseFultonTest
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -12,7 +13,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class IdentityManagerTest : BaseFultonTest() {
-    val identityManager = IdentityManagerImpl(InstrumentationRegistry.getContext())
+    private val identityManager = IdentityManagerImpl(InstrumentationRegistry.getContext(), FultonInitOptions())
 
     companion object {
         val TAG = IdentityManagerTest::class.java.simpleName!!

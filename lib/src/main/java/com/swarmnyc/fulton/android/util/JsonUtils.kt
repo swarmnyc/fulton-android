@@ -74,6 +74,13 @@ inline fun <reified T> String.fromJson(): T {
 }
 
 /**
+ * a extension of string that convert it to a given typed object
+ */
+fun <T> String.fromJson(type: Type): T {
+    return gson.fromJson(this, type)
+}
+
+/**
  * a extension of byte array that convert it to a given typed object
  */
 fun <T> ByteArray.fromJson(type: Type): T {

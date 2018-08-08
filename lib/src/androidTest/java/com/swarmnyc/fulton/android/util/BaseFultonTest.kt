@@ -7,13 +7,17 @@ import org.junit.Before
 import org.junit.BeforeClass
 
 abstract class BaseFultonTest {
+    companion object {
+        val voidCacheManager = VoidCacheManagrImpl()
+    }
 
     /**
      * initializing Fulton for every test, so all test has clear fulton to use
      */
     @Before
     fun initEach() {
-        Fulton.init(InstrumentationRegistry.getTargetContext())
-        Fulton.context.cacheManager = VoidCacheManagrImpl()
+        Fulton.init(InstrumentationRegistry.getTargetContext()) {
+            cacheManager = voidCacheManager
+        }
     }
 }
