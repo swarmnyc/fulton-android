@@ -40,8 +40,8 @@ abstract class FultonApiClient : ApiClient() {
      */
     protected inline fun <reified T : Any> detail(id: Any, queryParams: QueryParams? = null, noinline builder: (Request.() -> Unit)? = null): Promise<T> {
         return request {
-            // override the dataType because result is { data : T }, but convert to T, so when using can skip .data
-            this.dataType = ApiOneResult::class.java
+            // override the resultType because result is { data : T }, but convert to T, so when using can skip .data
+            this.resultType = ApiOneResult::class.java
             this.subResultType(T::class.java)
 
             this.queryParams = queryParams
@@ -58,7 +58,7 @@ abstract class FultonApiClient : ApiClient() {
     protected inline fun <reified T : Any> create(entity: T, noinline builder: (Request.() -> Unit)? = null): Promise<T> {
         return request {
             this.method = Method.POST
-            this.dataType = ApiOneResult::class.java
+            this.resultType = ApiOneResult::class.java
             this.subResultType(T::class.java)
             this.body = entity
 

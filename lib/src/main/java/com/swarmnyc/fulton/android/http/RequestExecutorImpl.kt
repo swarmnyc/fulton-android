@@ -21,8 +21,7 @@ class RequestExecutorImpl : RequestExecutor() {
                 }
             }
 
-            Log.d(ApiClient.TAG, msg)
-            Log.d(ApiClient.TAG, "--> ${req.method} (${req.url})\n$req")
+            Log.d(ApiClient.TAG, "--> ${req.method} (${req.url})\n$msg")
         }
 
         var conn: HttpURLConnection? = null

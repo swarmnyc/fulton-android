@@ -11,7 +11,7 @@ class Request {
     var method: Method = Method.GET
 
     var urlRoot: String? = null
-    var dataType: Type? = null
+    var resultType: Type? = null
 
     var cacheDurationMs: Int = Fulton.context.defaultCacheDurationMs
 
@@ -127,6 +127,10 @@ class Request {
         }
 
         if (queryString != null) {
+            if (queryString!!.startsWith("&")){
+                queryString = queryString!!.substring(1)
+            }
+
             builder.encodedQuery(getQuery(builder) + queryString)
         }
 
@@ -134,14 +138,14 @@ class Request {
     }
 
     fun buildDataType() {
-        if (dataType != null && subResultType != null) {
-            this.dataType = JsonGenericType(dataType!!, *subResultType!!.toTypedArray())
+        if (resultType != null && subResultType != null) {
+            this.resultType = JsonGenericType(resultType!!, *subResultType!!.toTypedArray())
         }
     }
 
     internal fun verify(): Exception? {
         if (url == null) return NullPointerException("Request.url cannot be null")
-        if (dataType == null) return NullPointerException("Request.dataType cannot be null")
+        if (resultType == null) return NullPointerException("Request.resultType cannot be null")
 
         return null
     }

@@ -32,7 +32,7 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
     protected inline fun <reified T> request(builder: Request.() -> Unit): Promise<T> {
         val req = Request()
         req.urlRoot = urlRoot
-        req.dataType = T::class.java
+        req.resultType = T::class.java
 
         builder(req)
 
@@ -54,7 +54,7 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
                 promise.shouldThrowUncaughtError = false
 
                 if (req.method == Method.GET && req.cacheDurationMs > NO_CACHE) {
-                    val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.dataType!!)
+                    val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.resultType!!)
                     if (cacheResult != null) {
                         // cache hits
                         promise.resolve(cacheResult)
@@ -101,10 +101,10 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
     protected open fun <T> handleSuccess(promise: Promise<T>, req: Request, res: Response) {
         var shouldCache = req.method == Method.GET && req.cacheDurationMs > NO_CACHE
 
-        val dataType = if (req.dataType is JsonGenericType) {
-            (req.dataType as JsonGenericType).rawType
+        val dataType = if (req.resultType is JsonGenericType) {
+            (req.resultType as JsonGenericType).rawType
         } else {
-            req.dataType
+            req.resultType
         }
 
         val result: T = when (dataType) {
@@ -115,10 +115,10 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
             }
             ApiOneResult::class.java -> {
                 // result is { data : T }, but convert to return T, so when using can skip .data
-                res.data.fromJson<ApiOneResult<T>>(req.dataType!!).data
+                res.data.fromJson<ApiOneResult<T>>(req.resultType!!).data
             }
             else -> {
-                res.data.fromJson(req.dataType!!)
+                res.data.fromJson(req.resultType!!)
             }
         }
 
@@ -138,8 +138,10 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
 
         onError(apiError)
 
-        if (req.sendErrorToErrorHandler) {
-            context.errorHandler.onError(apiError)
+        promise.catch {
+            if (req.sendErrorToErrorHandler) {
+                context.errorHandler.onError(apiError)
+            }
         }
 
         promise.reject(apiError)

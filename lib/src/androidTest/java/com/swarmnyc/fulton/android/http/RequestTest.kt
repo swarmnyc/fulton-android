@@ -224,4 +224,31 @@ class RequestTest : BaseFultonTest() {
 
         assertEquals("http://api.fulton.com/?test1=abc&filter[age]=37&filter[male]=true&test2=cba", request!!.url)
     }
+
+    @Test
+    fun query2Test() {
+        var request: Request? = null
+        val apiClient = object : ApiClient() {
+            override val urlRoot: String = "http://api.fulton.com/"
+
+            fun test(): Promise<Unit> {
+                return request {
+                    query("test1" to "abc")
+
+                    queryString = "&test2=cba&test3=efg"
+
+                    mockResponse = Response(200)
+                }
+            }
+
+            override fun <T> endRequest(promise: Promise<T>, req: Request, res: Response) {
+                request = req
+                super.endRequest(promise, req, res)
+            }
+        }
+
+        apiClient.test().await()
+
+        assertEquals("http://api.fulton.com/?test1=abc&test2=cba&test3=efg", request!!.url)
+    }
 }
