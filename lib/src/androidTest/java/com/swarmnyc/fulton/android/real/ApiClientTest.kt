@@ -5,7 +5,7 @@ import com.swarmnyc.fulton.android.error.HttpError
 import com.swarmnyc.fulton.android.http.ApiClientTest
 import com.swarmnyc.fulton.android.model.TopDogAuthor
 import com.swarmnyc.fulton.android.util.BaseFultonTest
-import com.swarmnyc.fulton.android.util.await
+import com.swarmnyc.promisekt.util.await
 import org.junit.Assert.*
 import org.junit.Ignore
 import org.junit.Test

@@ -2,7 +2,7 @@ package com.swarmnyc.fulton.android.http
 
 import com.swarmnyc.fulton.android.error.FultonError
 import com.swarmnyc.fulton.android.error.HttpError
-import com.swarmnyc.fulton.android.promise.Promise
+import com.swarmnyc.promisekt.Promise
 
 /**
  * Api Client for Fulton which is restFul styles api

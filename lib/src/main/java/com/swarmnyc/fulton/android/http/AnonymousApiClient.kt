@@ -1,6 +1,6 @@
 package com.swarmnyc.fulton.android.http
 
-import com.swarmnyc.fulton.android.promise.Promise
+import com.swarmnyc.promisekt.Promise
 
 internal class AnonymousApiClient : ApiClient() {
     override val urlRoot: String = ""

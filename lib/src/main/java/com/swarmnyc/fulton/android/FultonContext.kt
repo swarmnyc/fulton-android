@@ -5,7 +5,7 @@ import com.swarmnyc.fulton.android.error.ApiErrorHandler
 import com.swarmnyc.fulton.android.http.Request
 import com.swarmnyc.fulton.android.http.RequestExecutor
 import com.swarmnyc.fulton.android.identity.IdentityManager
-import com.swarmnyc.fulton.android.promise.Promise
+import com.swarmnyc.promisekt.Promise
 
 interface FultonContext {
     /**

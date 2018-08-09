@@ -3,7 +3,7 @@ package com.swarmnyc.fulton.android.http
 import com.swarmnyc.fulton.android.Fulton
 import com.swarmnyc.fulton.android.FultonContext
 import com.swarmnyc.fulton.android.error.HttpError
-import com.swarmnyc.fulton.android.promise.Promise
+import com.swarmnyc.promisekt.Promise
 import com.swarmnyc.fulton.android.util.JsonGenericType
 import com.swarmnyc.fulton.android.util.fromJson
 
@@ -45,8 +45,6 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
 
         return if (error == null) {
             Promise { promise ->
-                promise.shouldThrowUncaughtError = false
-
                 if (req.method == Method.GET && req.cacheDurationMs > 0) {
                     val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.resultType!!)
                     if (cacheResult != null) {

@@ -2,7 +2,7 @@ package com.swarmnyc.fulton.android.real
 
 import com.google.gson.JsonObject
 import com.swarmnyc.fulton.android.http.ApiClient
-import com.swarmnyc.fulton.android.promise.Promise
+import com.swarmnyc.promisekt.Promise
 
 class EchoApiClient : ApiClient() {
     override val urlRoot: String = "https://postman-echo.com"

@@ -33,4 +33,6 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.2'
     implementation 'joda-time:joda-time:2.3'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$versions.kotlin"
+
+    implementation 'com.github.swarmnyc.promisekt:promisekt-android:1.0.0'
 }

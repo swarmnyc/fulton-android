@@ -4,7 +4,7 @@ import android.content.Context
 import com.swarmnyc.fulton.android.http.AnonymousApiClient
 import com.swarmnyc.fulton.android.http.Request
 import com.swarmnyc.fulton.android.identity.IdentityManager
-import com.swarmnyc.fulton.android.promise.Promise
+import com.swarmnyc.promisekt.Promise
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 

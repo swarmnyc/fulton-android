@@ -8,11 +8,11 @@ import com.swarmnyc.fulton.android.model.ModelA
 import com.swarmnyc.fulton.android.model.ModelB
 import com.swarmnyc.fulton.android.model.TopDogAuthor
 import com.swarmnyc.fulton.android.model.TopDogPost
-import com.swarmnyc.fulton.android.promise.Promise
 import com.swarmnyc.fulton.android.real.TopDogPostApiClient
 import com.swarmnyc.fulton.android.util.BaseFultonTest
-import com.swarmnyc.fulton.android.util.await
 import com.swarmnyc.fulton.android.util.toJson
+import com.swarmnyc.promisekt.Promise
+import com.swarmnyc.promisekt.util.await
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
