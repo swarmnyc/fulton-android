@@ -91,12 +91,6 @@ class Promise<V> {
                 }
             }
         }
-
-        fun <T> syncPromise(executor: PromiseLambdaExecutor<T>): Promise<T> {
-            return Promise<T>().also { promise ->
-                executor(promise::resolve, promise::reject)
-            }
-        }
     }
 
     private constructor(options: PromiseOptions, parent: Promise<*>?) {
