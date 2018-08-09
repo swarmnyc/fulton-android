@@ -7,9 +7,8 @@ import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-typealias ResolveAction<V> = (V) -> Unit
 typealias RejectAction = (Throwable) -> Unit
-typealias PromiseLambdaExecutor<V> = (resolve: ResolveAction<V>, reject: RejectAction) -> Unit
+typealias PromiseLambdaExecutor<V> = (resolve: (V) -> Unit, reject: RejectAction) -> Unit
 typealias PromiseExecutor<V> = (promise: Promise<V>) -> Unit
 
 typealias ThenAction<V, R> = (V) -> R
@@ -90,6 +89,12 @@ class Promise<V> {
                         }
                     }
                 }
+            }
+        }
+
+        fun <T> syncPromise(executor: PromiseLambdaExecutor<T>): Promise<T> {
+            return Promise<T>().also { promise ->
+                executor(promise::resolve, promise::reject)
             }
         }
     }

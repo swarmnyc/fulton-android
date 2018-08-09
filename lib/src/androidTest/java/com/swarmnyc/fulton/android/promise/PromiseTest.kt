@@ -21,11 +21,10 @@ class PromiseTest {
 
         val latch = CountDownLatch(1)
         var result: String? = null
-        val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
+
+        val p = Promise<String> { resolve, _ ->
             resolve("Abc")
         }
-
-        val p = Promise(executor = executor)
 
         p.then {
             result = it
@@ -59,11 +58,10 @@ class PromiseTest {
 
         val latch = CountDownLatch(1)
         var result = 0
-        val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
+
+        val p = Promise<String> { resolve, _ ->
             resolve("Abc")
         }
-
-        val p = Promise(executor = executor)
 
         p.then {
             100
@@ -83,11 +81,9 @@ class PromiseTest {
 
         val latch = CountDownLatch(2)
 
-        val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
+        val p = Promise<String> { resolve, _ ->
             resolve("Abc")
         }
-
-        val p = Promise(executor = executor)
 
         p.then {
             latch.countDown()
@@ -106,11 +102,9 @@ class PromiseTest {
 
         val latch = CountDownLatch(3)
 
-        val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
+        val p = Promise<String> { resolve, _ ->
             resolve("Abc")
         }
-
-        val p = Promise(executor = executor)
 
         val p2 = p.then {
             latch.countDown()
@@ -141,11 +135,10 @@ class PromiseTest {
         val latch = CountDownLatch(1)
         val error = Throwable("Test")
         var result: Throwable? = null
-        val executor: PromiseLambdaExecutor<String> = { _, reject ->
-            reject(error)
-        }
 
-        Promise(executor = executor).then {
+        Promise<String> { _, reject ->
+            reject(error)
+        }.then {
             fail()
             latch.countDown()
         }.catch {
@@ -165,11 +158,10 @@ class PromiseTest {
         val latch = CountDownLatch(1)
         val error = Throwable("Test")
         var result: Throwable? = null
-        val executor: PromiseLambdaExecutor<String> = { _, _ ->
-            throw error
-        }
 
-        Promise(executor = executor).then {
+        Promise<String> { _, _ ->
+            throw error
+        }.then {
             fail()
         }.catch {
             result = it
@@ -188,11 +180,10 @@ class PromiseTest {
         val latch = CountDownLatch(2)
         val error = Throwable("Test")
         var result: Throwable? = null
-        val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
-            resolve("Abc")
-        }
 
-        Promise(executor = executor).then {
+        Promise<String> { resolve, _ ->
+            resolve("Abc")
+        }.then {
             latch.countDown()
             throw error
         }.catch {
@@ -212,11 +203,10 @@ class PromiseTest {
         val latch = CountDownLatch(3)
         val error = Throwable("Test")
         var result: Throwable? = null
-        val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
+
+        val p = Promise<String> { resolve, _ ->
             resolve("Abc")
         }
-
-        val p = Promise(executor = executor)
 
         p.then {
             latch.countDown()
@@ -298,11 +288,9 @@ class PromiseTest {
             latch.countDown()
         }
 
-        val executor: PromiseLambdaExecutor<String> = { _, _ ->
+        Promise<Nothing> { _, _ ->
             throw error
         }
-
-        Promise(executor = executor)
 
         latch.await()
 
@@ -326,11 +314,9 @@ class PromiseTest {
             latch.countDown()
         }
 
-        val executor: PromiseLambdaExecutor<String> = { _, _ ->
+        Promise<Nothing> { _, _ ->
             throw error1
-        }
-
-        Promise(executor = executor).then {
+        }.then {
             fail()
         }.catch {
             throw error1
@@ -384,12 +370,11 @@ class PromiseTest {
 
         val latch = CountDownLatch(1)
         var result = 0
-        val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
+
+        val p = Promise<String> { resolve, _ ->
             Thread.sleep(100)
             resolve("Abc")
         }
-
-        val p = Promise(executor = executor)
 
         p.thenChain {
             Promise.resolve(123)
@@ -414,14 +399,12 @@ class PromiseTest {
 
         Log.d(TAG, "Main Thread Id : ${Thread.currentThread().id}")
 
-        val executor: PromiseLambdaExecutor<Unit> = { resolve, _ ->
+        val promise = Promise<Unit> { resolve, _ ->
             Thread.sleep(100)
             Log.d(TAG, "executor Thread Id : ${Thread.currentThread().id}")
             executorThread.set(Thread.currentThread().id)
             resolve(Unit)
-        }
-
-        val promise = Promise(executor = executor).then {
+        }.then {
             Log.d(TAG, "Then 1 Thread Id : ${Thread.currentThread().id}")
             then1Thread.set(Thread.currentThread().id)
         }.thenUi {
@@ -435,13 +418,11 @@ class PromiseTest {
 
         Log.d(TAG, "Main Thread Id : ${Thread.currentThread().id}")
 
-        val executor2: PromiseLambdaExecutor<Unit> = { resolve, _ ->
+        val promise2 = Promise<Unit> { resolve, _ ->
             Log.d(TAG, "executor Thread Id : ${Thread.currentThread().id}")
             executor2Thread.set(Thread.currentThread().id)
             resolve(Unit)
-        }
-
-        val promise2 = Promise(executor = executor2).then {
+        }.then {
             Log.d(TAG, "Then 1 Thread Id : ${Thread.currentThread().id}")
             then3Thread.set(Thread.currentThread().id)
         }.thenUi {
@@ -466,19 +447,19 @@ class PromiseTest {
         // test promise.all success
 
         val latch = CountDownLatch(1)
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+        val promise1 = Promise<String> { resolve, _ ->
             Thread.sleep(200)
             resolve("Abc")
         }
 
-        val executor2: PromiseLambdaExecutor<String> = { resolve, _ ->
+        val promise2 = Promise<String> { resolve, _ ->
             Thread.sleep(100)
             resolve("Efg")
         }
 
         var result: Array<Any>? = null
 
-        val p = Promise.all(Promise(executor = executor1), Promise(executor = executor2)).then {
+        Promise.all(promise1, promise2).then {
             result = it
             latch.countDown()
         }
@@ -496,17 +477,17 @@ class PromiseTest {
         val error = Throwable("Test")
         var result: Throwable? = null
 
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+        val promise1 = Promise<String> { _, _ ->
             Thread.sleep(200)
             throw error
         }
 
-        val executor2: PromiseLambdaExecutor<String> = { resolve, _ ->
+        val promise2 = Promise<String> { resolve, _ ->
             Thread.sleep(100)
             resolve("Efg")
         }
 
-        Promise.all(Promise(executor = executor1), Promise(executor = executor2)).then {
+        Promise.all(promise1, promise2).then {
             fail()
         }.catch {
             result = it
@@ -525,17 +506,17 @@ class PromiseTest {
         val latch = CountDownLatch(1)
         var result = ""
 
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+        val promise1 = Promise<String> { resolve, _ ->
             Thread.sleep(500)
             resolve("Abc")
         }
 
-        val executor2: PromiseLambdaExecutor<String> = { resolve, _ ->
+        val promise2 = Promise<String> { resolve, _ ->
             Thread.sleep(100)
             resolve("Efg")
         }
 
-        Promise.race(Promise(executor = executor1), Promise(executor = executor2)).then {
+        Promise.race(promise1, promise2).then {
             result = it as String
             latch.countDown()
         }
@@ -552,17 +533,17 @@ class PromiseTest {
         val latch = CountDownLatch(1)
         var result = ""
 
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+        val promise1 = Promise<String> { resolve, _ ->
             Thread.sleep(200)
             throw Throwable("Test")
         }
 
-        val executor2: PromiseLambdaExecutor<String> = { resolve, _ ->
+        val promise2 = Promise<String> { resolve, _ ->
             Thread.sleep(100)
             resolve("Efg")
         }
 
-        Promise.race(Promise(executor = executor1), Promise(executor = executor2)).then {
+        Promise.race(promise1, promise2).then {
             result = it as String
             latch.countDown()
         }
@@ -578,12 +559,10 @@ class PromiseTest {
 
         val latch = CountDownLatch(1)
 
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+        val p = Promise<String> { resolve, _ ->
             Thread.sleep(100000)
             resolve("abc")
         }
-
-        val p = Promise(executor1)
 
         p.then {
             fail()
@@ -608,12 +587,11 @@ class PromiseTest {
 
         val latch = CountDownLatch(1)
         var result: Throwable? = null
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+
+        val p = Promise<String> { resolve, _ ->
             Thread.sleep(100000)
             resolve("abc")
         }
-
-        val p = Promise(executor1)
 
         p.then {
             fail()
@@ -637,12 +615,11 @@ class PromiseTest {
 
         val latch = CountDownLatch(1)
         var result: Throwable? = null
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+
+        val p = Promise<String> { resolve, _ ->
             Thread.sleep(100000)
             resolve("abc")
-        }
-
-        val p = Promise(executor1).then {
+        }.then {
             fail()
         }.catch {
             result = it
@@ -664,12 +641,11 @@ class PromiseTest {
 
         val latch = CountDownLatch(1)
         var result: Throwable? = null
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+
+        Promise<String> { resolve, _ ->
             Thread.sleep(100000)
             resolve("abc")
-        }
-
-        Promise(executor1).timeout(1000, true).then {
+        }.timeout(1000, true).then {
             fail()
         }.catch {
             result = it
@@ -687,12 +663,11 @@ class PromiseTest {
 
         val latch = CountDownLatch(1)
         var result: Throwable? = null
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+
+        Promise<String> { resolve, _ ->
             Thread.sleep(100000)
             resolve("abc")
-        }
-
-        Promise(executor1).then {
+        }.then {
             fail()
         }.catch {
             result = it
@@ -710,11 +685,10 @@ class PromiseTest {
 
         val latch = CountDownLatch(1)
         var result: String? = null
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
-            resolve("abc")
-        }
 
-        Promise(executor1).then {
+        Promise<String> { resolve, _ ->
+            resolve("abc")
+        }.then {
             result = it
             latch.countDown()
         }.catch {
@@ -735,11 +709,9 @@ class PromiseTest {
         val error = Throwable("Test")
         var result: Throwable? = null
 
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+        Promise<String> { resolve, _ ->
             throw error
-        }
-
-        Promise(executor1).then {
+        }.then {
             fail()
         }.catch {
             result = it
@@ -758,14 +730,12 @@ class PromiseTest {
         val latch = CountDownLatch(1)
         var result: Throwable? = null
 
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
-            Thread.sleep(100000)
-            resolve("abc")
-        }
-
         Promise.resolve("abc")
                 .thenChain {
-                    Promise(executor1)
+                    Promise<String> { resolve, _ ->
+                        Thread.sleep(100000)
+                        resolve("efg")
+                    }
                 }
                 .then {
                     fail()
@@ -782,7 +752,6 @@ class PromiseTest {
     }
 
 
-
     @Test
     fun timeout6Test() {
         // test timeout, but time in
@@ -791,14 +760,12 @@ class PromiseTest {
         val latch = CountDownLatch(1)
         var result: String? = null
 
-        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
-            Thread.sleep(100)
-            resolve("efg")
-        }
-
         Promise.resolve("abc")
                 .thenChain {
-                    Promise(executor1)
+                    Promise<String> { resolve, _ ->
+                        Thread.sleep(100)
+                        resolve("efg")
+                    }
                 }.then {
                     result = it
                     latch.countDown()
