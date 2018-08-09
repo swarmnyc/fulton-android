@@ -1,6 +1,7 @@
 package com.swarmnyc.fulton.android.http
 
 import android.util.Log
+import com.swarmnyc.fulton.android.util.Logger
 import com.swarmnyc.fulton.android.util.toJson
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
@@ -8,9 +9,15 @@ import java.net.URL
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
+private const val GZip = "gzip"
+
 class RequestExecutorImpl : RequestExecutor() {
     override fun execute(req: Request, callback: RequestCallback) {
-        if (Log.isLoggable(ApiClient.TAG, Log.DEBUG)) {
+        if (req.useGzip) {
+            req.headers("Content-Encoding" to GZip, "Accept-Encoding" to GZip)
+        }
+
+        Logger.Api.d {
             val msg = buildString {
                 appendln("--> ${req.method} (${req.url})")
                 appendln("Body : ${if (req.body == null) "(empty)" else req.body?.toJson()}")
@@ -21,7 +28,7 @@ class RequestExecutorImpl : RequestExecutor() {
                 }
             }
 
-            Log.d(ApiClient.TAG, "--> ${req.method} (${req.url})\n$msg")
+            "--> ${req.method} (${req.url})\n$msg"
         }
 
         var conn: HttpURLConnection? = null
@@ -49,8 +56,6 @@ class RequestExecutorImpl : RequestExecutor() {
                     conn.doOutput = true
 
                     val writer = OutputStreamWriter(if (req.useGzip) {
-                        setRequestProperty("Content-Encoding", ApiClient.GZip)
-                        setRequestProperty("Accept-Encoding", ApiClient.GZip)
                         GZIPOutputStream(conn.outputStream)
                     } else {
                         conn.outputStream
@@ -69,7 +74,7 @@ class RequestExecutorImpl : RequestExecutor() {
 
             val contentEncoding = conn.contentEncoding ?: ""
 
-            val data = if (contentEncoding.compareTo(ApiClient.GZip, true) == 0) {
+            val data = if (contentEncoding.compareTo(GZip, true) == 0) {
                 GZIPInputStream(stream).readBytes()
             } else {
                 stream.readBytes()
@@ -84,9 +89,10 @@ class RequestExecutorImpl : RequestExecutor() {
             conn?.disconnect()
         }
 
-        if (Log.isLoggable(ApiClient.TAG, Log.DEBUG)) {
+        Logger.Api.d {
             val time = (System.currentTimeMillis() - req.startedAt)
-            val msg = buildString {
+
+            buildString {
                 appendln("<-- ${res.status} (${res.url})")
                 appendln("Time Spent : $time")
                 appendln("Length : ${res.contentLength}")
@@ -96,8 +102,6 @@ class RequestExecutorImpl : RequestExecutor() {
                 }
                 appendln("Body : ${if (res.data.isNotEmpty()) String(res.data) else "(empty)"}")
             }
-
-            Log.d(ApiClient.TAG, msg)
         }
 
         callback(req, res)

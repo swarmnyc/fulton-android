@@ -4,10 +4,7 @@ import android.support.test.runner.AndroidJUnit4
 import com.swarmnyc.fulton.android.Fulton
 import com.swarmnyc.fulton.android.identity.AccessToken
 import com.swarmnyc.fulton.android.model.TopDogAuthor
-import com.swarmnyc.fulton.android.model.TopDogPost
 import com.swarmnyc.fulton.android.promise.Promise
-import com.swarmnyc.fulton.android.promise.Reject
-import com.swarmnyc.fulton.android.promise.Resolve
 import com.swarmnyc.fulton.android.util.BaseFultonTest
 import com.swarmnyc.fulton.android.util.await
 import org.junit.Assert.*

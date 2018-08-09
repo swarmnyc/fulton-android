@@ -184,7 +184,7 @@ class PromiseTest {
     @Test
     fun catchFailOnThenTest() {
         // test catch fail on then
-        
+
         val latch = CountDownLatch(2)
         val error = Throwable("Test")
         var result: Throwable? = null
@@ -208,7 +208,7 @@ class PromiseTest {
     @Test
     fun catchFailOnThen2Test() {
         // test catch fail by p1->p2->catch, p1->p3->then
-        
+
         val latch = CountDownLatch(3)
         val error = Throwable("Test")
         var result: Throwable? = null
@@ -241,7 +241,7 @@ class PromiseTest {
     @Test
     fun catchRejectTest() {
         // test two catch
-        
+
         val latch = CountDownLatch(2)
         val error = Throwable("Test")
         var result1: Throwable? = null
@@ -266,7 +266,7 @@ class PromiseTest {
     @Test
     fun catchReject2Test() {
         // test two catch, and first catch throw new error
-        
+
         val latch = CountDownLatch(1)
         val error1 = Throwable("Test1")
         val error2 = Throwable("Test2")
@@ -287,7 +287,7 @@ class PromiseTest {
     @Test
     fun uncaughtTest() {
         // test to throw uncaught error on root promise
-        
+
         val latch = CountDownLatch(1)
         val error = Throwable("Test")
         var result: Throwable? = null
@@ -314,7 +314,7 @@ class PromiseTest {
     @Test
     fun uncaught2Test() {
         // test to throw uncaught error on child promise's catch 
-        
+
         val latch = CountDownLatch(1)
         val error1 = Throwable("Test1")
         val error2 = Throwable("Test2")
@@ -381,7 +381,7 @@ class PromiseTest {
     @Test
     fun chainTest() {
         // test promise chain
-        
+
         val latch = CountDownLatch(1)
         var result = 0
         val executor: PromiseLambdaExecutor<String> = { resolve, _ ->
@@ -406,7 +406,7 @@ class PromiseTest {
     @Test
     fun treadTest() {
         // test multi-threads, there will create 3 thread, 1. main thread, 2. promise body thread 3. result(success, fail, always) thread
-        
+
         val mainThread = Thread.currentThread().id
         val executorThread = AtomicLong(0)
         val then1Thread = AtomicLong(0)
@@ -464,7 +464,7 @@ class PromiseTest {
     @Test
     fun allThenTest() {
         // test promise.all success
-        
+
         val latch = CountDownLatch(1)
         val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
             Thread.sleep(200)
@@ -629,7 +629,6 @@ class PromiseTest {
         latch.await()
 
         assertTrue(result is InterruptedException)
-
     }
 
     @Test
@@ -750,5 +749,67 @@ class PromiseTest {
         latch.await()
 
         assertEquals(error, result)
+    }
+
+    @Test
+    fun timeout5Test() {
+        // test timeout with promise.thenChain
+
+        val latch = CountDownLatch(1)
+        var result: Throwable? = null
+
+        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+            Thread.sleep(100000)
+            resolve("abc")
+        }
+
+        Promise.resolve("abc")
+                .thenChain {
+                    Promise(executor1)
+                }
+                .then {
+                    fail()
+                }
+                .timeout(1000, true)
+                .catch {
+                    result = it
+                    latch.countDown()
+                }
+
+        latch.await()
+
+        assertTrue(result is InterruptedException)
+    }
+
+
+
+    @Test
+    fun timeout6Test() {
+        // test timeout, but time in
+
+        Promise.defaultOptions.debugMode = true
+        val latch = CountDownLatch(1)
+        var result: String? = null
+
+        val executor1: PromiseLambdaExecutor<String> = { resolve, _ ->
+            Thread.sleep(100)
+            resolve("efg")
+        }
+
+        Promise.resolve("abc")
+                .thenChain {
+                    Promise(executor1)
+                }.then {
+                    result = it
+                    latch.countDown()
+                }
+                .timeout(1000, true)
+                .catch {
+                    fail()
+                }
+
+        latch.await()
+
+        assertEquals("efg", result)
     }
 }

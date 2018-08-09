@@ -93,7 +93,7 @@ class IdentityManagerImpl(private val context: Context, options: FultonInitOptio
     private fun parseJwt() {
         val arr = _token!!.accessToken.split(".")
         if (arr.size == 3) {
-            _user = arr[1].decodeBase64Url().fromJson()
+            _user = arr[1].decodeBase64Url().fromJson(userType)
         }
 
     }

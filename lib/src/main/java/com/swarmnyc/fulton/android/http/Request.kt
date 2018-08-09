@@ -22,7 +22,7 @@ class Request {
 
     var startedAt = System.currentTimeMillis()
 
-    var sendErrorToErrorHandler = true
+    var shouldSendErrorToErrorHandler = true
     /**
      * get or set the path of the url
      * */

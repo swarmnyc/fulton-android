@@ -15,12 +15,6 @@ import com.swarmnyc.fulton.android.util.fromJson
  * - cache
  * */
 abstract class ApiClient(val context: FultonContext = Fulton.context) {
-    companion object {
-        const val TAG = "fulton.api"
-        const val GZip = "gzip"
-        const val NO_CACHE = 0
-    }
-
     protected abstract val urlRoot: String
 
     /**
@@ -53,7 +47,7 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
             Promise { promise ->
                 promise.shouldThrowUncaughtError = false
 
-                if (req.method == Method.GET && req.cacheDurationMs > NO_CACHE) {
+                if (req.method == Method.GET && req.cacheDurationMs > 0) {
                     val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.resultType!!)
                     if (cacheResult != null) {
                         // cache hits
@@ -99,7 +93,7 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
     }
 
     protected open fun <T> handleSuccess(promise: Promise<T>, req: Request, res: Response) {
-        var shouldCache = req.method == Method.GET && req.cacheDurationMs > NO_CACHE
+        var shouldCache = req.method == Method.GET && req.cacheDurationMs > 0
 
         val dataType = if (req.resultType is JsonGenericType) {
             (req.resultType as JsonGenericType).rawType
@@ -139,7 +133,7 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
         onError(apiError)
 
         promise.catch {
-            if (req.sendErrorToErrorHandler) {
+            if (req.shouldSendErrorToErrorHandler) {
                 context.errorHandler.onError(apiError)
             }
         }

@@ -5,6 +5,8 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.text.format.DateUtils
+import android.util.Log
+import com.swarmnyc.fulton.android.util.Logger
 import com.swarmnyc.fulton.android.util.fromJson
 import com.swarmnyc.fulton.android.util.urlEncode
 import java.lang.reflect.Type
@@ -24,30 +26,39 @@ class SqliteCacheManager(context: Context) : CacheManager {
     }
 
     private val helper = DbHelper(context)
+    private val db = helper.writableDatabase
     private var nextCheckedMs = 0L
 
     override fun add(cls: String, url: String, durationMs: Int, data: ByteArray) {
         val values = ContentValues()
+        val expiredAt = System.currentTimeMillis() + durationMs
         values.put(FieldURL, url.urlEncode())
         values.put(FieldClass, cls)
-        values.put(FieldExpiredAt, System.currentTimeMillis() + durationMs)
+        values.put(FieldExpiredAt, expiredAt)
         values.put(FieldData, data)
 
-        helper.writableDatabase.replace(TableName, null, values)
+        db.replace(TableName, null, values)
+
+        Logger.Cache.d {
+            "Add Cache for $cls, $url, +$durationMs at $expiredAt"
+        }
     }
 
     override fun <T> get(url: String, type: Type): T? {
         cleanOld()
 
-        val cursor = helper.readableDatabase.query(
+        val time = System.currentTimeMillis()
+        val cursor = db.query(
                 TableName,
                 arrayOf(FieldData),
-                "$FieldURL = ? AND $FieldExpiredAt > ${System.currentTimeMillis()}",
-                arrayOf(url.urlEncode()), null, null, null)
+                "$FieldURL = '${url.urlEncode()}' AND $FieldExpiredAt > $time",
+                arrayOf(), null, null, null)
 
         val data: T? = if (cursor.moveToFirst()) {
+            Logger.Cache.d { "Find Cache for $url" }
             cursor.getBlob(0).fromJson(type)
         } else {
+            Logger.Cache.d { "No Cache for $url and $time" }
             null
         }
 
@@ -58,15 +69,19 @@ class SqliteCacheManager(context: Context) : CacheManager {
 
     override fun clean(cls: String?) {
         if (cls == null) {
-            helper.writableDatabase.delete(TableName, null, null)
+            Logger.Cache.d { "Clean All Cache" }
+            db.delete(TableName, null, null)
         } else {
-            helper.writableDatabase.delete(TableName, "$FieldClass=?", arrayOf(cls))
+            Logger.Cache.d { "Clean Cache for $cls" }
+            db.delete(TableName, "$FieldClass=?", arrayOf(cls))
         }
     }
 
     private fun cleanOld() {
         if (nextCheckedMs < System.currentTimeMillis()) {
-            helper.writableDatabase.delete(TableName, "$FieldExpiredAt < ?", arrayOf(nextCheckedMs.toString()))
+            Logger.Cache.d { "Clean Old Cache" }
+
+            db.delete(TableName, "$FieldExpiredAt < ?", arrayOf(nextCheckedMs.toString()))
 
             nextCheckedMs = System.currentTimeMillis() + DateUtils.DAY_IN_MILLIS
         }

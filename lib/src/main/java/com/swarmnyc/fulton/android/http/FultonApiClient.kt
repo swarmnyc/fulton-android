@@ -23,7 +23,7 @@ abstract class FultonApiClient : ApiClient() {
     }
 
     /**
-     * make a GET request to get list of entities
+     * make a GET request to get list of entities, the result have to be { data : T } format
      */
     protected inline fun <reified T> get(queryParams: QueryParams? = null, noinline builder: (Request.() -> Unit)? = null): Promise<T> {
         return request {
