@@ -160,15 +160,28 @@ class RequestTest : BaseFultonTest() {
                             }
                         }
 
-                        // two styles
+                        sort {
+                            desc("sort1")
+                            asc("sort2")
+                        }
+
+                        projection {
+                            show("pro1")
+                            hide("pro2")
+                        }
+
+                        includes {
+                            add("include1", "include2.include2")
+                        }
+
                         pagination {
                             index = 1
                             size = 100
                         }
 
-                        projection = mapOf("pro1" to true, "pro2" to false)
-                        includes = listOf("include1", "include2.include2")
-                        sort = mapOf("sort1" to true, "sort2" to false)
+                        includes {
+                            add("include1", "include2.include2")
+                        }
                     }
 
                     mockResponse = Response(200)

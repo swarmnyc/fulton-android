@@ -25,7 +25,7 @@ abstract class FultonApiClient : ApiClient() {
     /**
      * make a GET request to get list of entities, the result have to be { data : T } format
      */
-    protected inline fun <reified T> get(queryParams: QueryParams? = null, noinline builder: (Request.() -> Unit)? = null): Promise<T> {
+    protected inline fun <reified T> get(queryParams: QueryParams? = null, noinline init: (Request.() -> Unit)? = null): Promise<T> {
         return request {
             // override the resultType because result is { data : T }, but convert to T, so when using can skip .data
             this.resultType = ApiOneResult::class.java
@@ -33,39 +33,39 @@ abstract class FultonApiClient : ApiClient() {
 
             this.queryParams = queryParams
 
-            if (builder != null) builder(this)
+            if (init != null) this.init()
         }
     }
 
     /**
      * make a GET request to get list of entities
      */
-    protected inline fun <reified T> post(queryParams: QueryParams? = null, noinline builder: (Request.() -> Unit)? = null): Promise<T> {
+    protected inline fun <reified T> post(queryParams: QueryParams? = null, noinline init: (Request.() -> Unit)? = null): Promise<T> {
         return request {
             this.method = Method.POST
             this.queryParams = queryParams
 
-            if (builder != null) builder(this)
+            if (init != null) this.init()
         }
     }
 
     /**
      * make a GET request to get list of entities
      */
-    protected inline fun <reified T> list(queryParams: QueryParams? = null, noinline builder: (Request.() -> Unit)? = null): Promise<ApiManyResult<T>> {
+    protected inline fun <reified T> list(queryParams: QueryParams? = null, noinline init: (Request.() -> Unit)? = null): Promise<ApiManyResult<T>> {
         return request {
             this.resultTypeGenerics(T::class.java)
 
             this.queryParams = queryParams
 
-            if (builder != null) builder(this)
+            if (init != null) this.init()
         }
     }
 
     /**
      * make a GET request to get a single entity
      */
-    protected inline fun <reified T : Any> detail(id: Any, queryParams: QueryParams? = null, noinline builder: (Request.() -> Unit)? = null): Promise<T> {
+    protected inline fun <reified T> detail(id: Any, queryParams: QueryParams? = null, noinline init: (Request.() -> Unit)? = null): Promise<T> {
         return request {
             // override the resultType because result is { data : T }, but convert to T, so when using can skip .data
             this.resultType = ApiOneResult::class.java
@@ -73,7 +73,7 @@ abstract class FultonApiClient : ApiClient() {
 
             this.queryParams = queryParams
 
-            if (builder != null) builder(this)
+            if (init != null) this.init()
 
             this.paths(id.toString())
         }
@@ -82,26 +82,26 @@ abstract class FultonApiClient : ApiClient() {
     /**
      * make POST request to create an entity
      */
-    protected inline fun <reified T : Any> create(entity: T, noinline builder: (Request.() -> Unit)? = null): Promise<T> {
+    protected inline fun <reified T> create(entity: T, noinline init: (Request.() -> Unit)? = null): Promise<T> {
         return request {
             this.method = Method.POST
             this.resultType = ApiOneResult::class.java
             this.resultTypeGenerics(T::class.java)
             this.body = entity
 
-            if (builder != null) builder(this)
+            if (init != null) this.init()
         }
     }
 
     /**
      * make a Put request to update the entity
      */
-    protected fun <T> update(id: Any, entity: T, builder: (Request.() -> Unit)? = null): Promise<Unit> {
+    protected fun <T> update(id: Any, entity: T, init: (Request.() -> Unit)? = null): Promise<Unit> {
         return request {
             this.method = Method.PUT
             this.body = entity
 
-            if (builder != null) builder(this)
+            if (init != null) this.init()
 
             this.paths(id.toString())
         }
@@ -110,12 +110,12 @@ abstract class FultonApiClient : ApiClient() {
     /**
      * make a Put request to update the partial of the entity
      */
-    protected fun update(id: Any, partialEntity: Map<String, Any>, builder: (Request.() -> Unit)? = null): Promise<Unit> {
+    protected fun update(id: Any, partialEntity: Map<String, Any>, init: (Request.() -> Unit)? = null): Promise<Unit> {
         return request {
             this.method = Method.PUT
             this.body = partialEntity
 
-            if (builder != null) builder(this)
+            if (init != null) this.init()
 
             this.paths(id.toString())
         }
@@ -124,11 +124,11 @@ abstract class FultonApiClient : ApiClient() {
     /**
      * make a Delete request to delete the entity
      */
-    protected fun delete(id: Any, builder: (Request.() -> Unit)? = null): Promise<Unit> {
+    protected fun delete(id: Any, init: (Request.() -> Unit)? = null): Promise<Unit> {
         return request {
             this.method = Method.DELETE
 
-            if (builder != null) builder(this)
+            if (init != null) this.init()
 
             this.paths(id.toString())
         }

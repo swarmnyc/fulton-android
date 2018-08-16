@@ -23,12 +23,12 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
     open fun initRequest(req: Request) {
     }
 
-    protected inline fun <reified T> request(builder: Request.() -> Unit): Promise<T> {
+    protected inline fun <reified T> request(init: Request.() -> Unit): Promise<T> {
         val req = Request()
         req.urlRoot = urlRoot
         req.resultType = T::class.java
 
-        builder(req)
+        req.init()
 
         return request(req)
     }
@@ -36,6 +36,7 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
     protected fun <T> request(req: Request): Promise<T> {
         initRequest(req)
 
+        if (req.urlRoot == null) req.urlRoot = req.urlRoot
         if (req.url == null) req.buildUrl()
 
         req.buildDataType()

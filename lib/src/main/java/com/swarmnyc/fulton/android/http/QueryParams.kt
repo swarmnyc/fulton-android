@@ -4,7 +4,6 @@ import android.net.Uri
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.swarmnyc.fulton.android.util.JsonObjectBuilder
-import com.swarmnyc.fulton.android.util.urlEncode
 
 /**
  * the class of pagination for query params
@@ -14,10 +13,42 @@ data class QueryParamPagination(
         var size: Int? = null
 )
 
+class QueryParamSort {
+    internal val map = mutableMapOf<String, Boolean>()
+
+    fun asc(field: String) {
+        map[field] = false
+    }
+
+    fun desc(field: String) {
+        map[field] = true
+    }
+}
+
+class QueryParamProjection {
+    internal val map = mutableMapOf<String, Boolean>()
+
+    fun show(field: String) {
+        map[field] = true
+    }
+
+    fun hide(field: String) {
+        map[field] = false
+    }
+}
+
+class QueryParamIncludes {
+    internal val list = mutableListOf<String>()
+
+    fun add(vararg field: String) {
+        list.addAll(field)
+    }
+}
+
 /**
  * the class of Query Params
  * it can use JSON DSL
- * ``` kotlon
+ * ``` kotlin
  * queryParams {
  *      filter = json {
  *          "\$or" to listOf(json {
@@ -28,15 +59,25 @@ data class QueryParamPagination(
  *              "\$options" to "i"
  *          }
  *      })
- *      projection = mapOf("pro1" to true, "pro2" to false)
- *      includes = listOf("include1", "include2.include2")
- *      sort = mapOf("sort1" to true, "sort2" to false)
- *      // two styles
+ *
+ *      sort {
+ *           desc("sort1")
+ *           asc("sort2")
+ *      }
+ *
+ *      projection {
+ *           hide("pro2")
+ *           show("pro1")
+ *      }
+ *
+ *      includes {
+ *            add("include1", "include2.include2")
+ *       }
+ *
  *      pagination {
  *          index = 1
  *          size = 100
  *      }
- *      pagination = QueryParamPagination(1, 100)
  *  }
  * ```
  */
@@ -46,29 +87,53 @@ class QueryParams {
      */
     var filter: JsonObject? = null
 
+    fun filter(init: JsonObjectBuilder.() -> Unit) {
+        filter = JsonObjectBuilder().json(init)
+    }
+
     /**
      * the parameter of sort, the format is
      * ```
-     * mapOf("sort1" to true, "sort2" to false)
+     * sort {
+     *      desc("sort1")
+     *      asc("sort2")
+     * }
      * ```
      */
     var sort: Map<String, Boolean>? = null
 
+    fun sort(init: QueryParamSort.() -> Unit) {
+        sort = QueryParamSort().apply(init).map
+    }
+
     /**
      * the parameter of the projection, the format is
      * ```
-     * mapOf("pro1" to true, "pro2" to false)
+     * projection {
+     *  show("pro1")
+     *  hide("pro2")
+     * }
      * ```
      */
     var projection: Map<String, Boolean>? = null
 
+    fun projection(init: QueryParamProjection.() -> Unit) {
+        projection = QueryParamProjection().apply(init).map
+    }
+
     /**
      * the parameter of the includes, the format is
      * ```
-     * listOf("include1", "include2.include2")
+     * includes {
+     *    add("include1", "include2.include2")
+     * }
      * ```
      */
     var includes: List<String>? = null
+
+    fun includes(init: QueryParamIncludes.() -> Unit) {
+        includes = QueryParamIncludes().apply(init).list
+    }
 
     /**
      * the parameter of the pagination, the format is
@@ -81,13 +146,21 @@ class QueryParams {
      */
     var pagination: QueryParamPagination? = null
 
+    fun pagination(init: QueryParamPagination.() -> Unit) {
+        pagination = QueryParamPagination().apply(init)
+    }
+
     /**
      * the parameter of query, the format is
      * ```
-     * mapOf("field2" to any, "field1" to any)
+     * query("field2" to any, "field1" to any)
      * ```
      */
     var query: Map<String, String>? = null
+
+    fun query(vararg pair: Pair<String, String>) {
+        query = pair.toMap()
+    }
 
     /**
      * convert json object to query string recursively
@@ -174,18 +247,4 @@ class QueryParams {
 /**
  * the DSL for query params
  */
-fun queryParams(block: QueryParams.() -> Unit): QueryParams = QueryParams().apply(block)
-
-/**
- * the DSL for query params
- */
-fun QueryParams.filter(block: JsonObjectBuilder.() -> Unit) {
-    filter = JsonObjectBuilder().json(block)
-}
-
-/**
- * the DSL for pagination
- */
-fun QueryParams.pagination(block: QueryParamPagination.() -> Unit) {
-    pagination = QueryParamPagination().apply(block)
-}
+fun queryParams(init: QueryParams.() -> Unit): QueryParams = QueryParams().apply(init)
