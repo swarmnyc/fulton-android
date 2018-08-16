@@ -2,7 +2,7 @@ package com.swarmnyc.fulton.android.http
 
 import android.net.Uri
 import com.swarmnyc.fulton.android.Fulton
-import com.swarmnyc.fulton.android.util.JsonGenericType
+import com.swarmnyc.fulton.android.util.GenericType
 import java.lang.reflect.Type
 
 class Request {
@@ -84,16 +84,16 @@ class Request {
     /**
      * get or set the result type of the request
      * */
-    var subResultType: List<Type>? = null
+    var resultTypeGenerics: List<Type>? = null
 
     /**
      * add the result type of the request
      * */
-    fun subResultType(vararg values: Type) {
-        if (this.subResultType == null) {
-            this.subResultType = values.asList()
+    fun resultTypeGenerics(vararg values: Type) {
+        if (this.resultTypeGenerics == null) {
+            this.resultTypeGenerics = values.asList()
         } else {
-            this.subResultType = this.subResultType!! + values
+            this.resultTypeGenerics = this.resultTypeGenerics!! + values
         }
     }
 
@@ -138,8 +138,8 @@ class Request {
     }
 
     fun buildDataType() {
-        if (resultType != null && subResultType != null) {
-            this.resultType = JsonGenericType(resultType!!, *subResultType!!.toTypedArray())
+        if (resultType != null && resultTypeGenerics != null) {
+            this.resultType = GenericType(resultType!!, *resultTypeGenerics!!.toTypedArray())
         }
     }
 

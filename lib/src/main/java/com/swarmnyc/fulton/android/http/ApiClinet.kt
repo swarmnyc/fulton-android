@@ -4,7 +4,7 @@ import com.swarmnyc.fulton.android.Fulton
 import com.swarmnyc.fulton.android.FultonContext
 import com.swarmnyc.fulton.android.error.HttpError
 import com.swarmnyc.promisekt.Promise
-import com.swarmnyc.fulton.android.util.JsonGenericType
+import com.swarmnyc.fulton.android.util.GenericType
 import com.swarmnyc.fulton.android.util.fromJson
 
 
@@ -93,8 +93,8 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
     protected open fun <T> handleSuccess(promise: Promise<T>, req: Request, res: Response) {
         var shouldCache = req.method == Method.GET && req.cacheDurationMs > 0
 
-        val dataType = if (req.resultType is JsonGenericType) {
-            (req.resultType as JsonGenericType).rawType
+        val dataType = if (req.resultType is GenericType) {
+            (req.resultType as GenericType).rawType
         } else {
             req.resultType
         }

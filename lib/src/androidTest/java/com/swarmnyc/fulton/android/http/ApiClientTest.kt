@@ -132,7 +132,7 @@ class ApiClientTest : BaseFultonTest() {
                 return request {
                     method = Method.GET
                     paths = listOf("list")
-                    subResultType = listOf(ModelA::class.java)
+                    resultTypeGenerics = listOf(ModelA::class.java)
 
                     mockResponse = Response(200, data = json.toByteArray())
                 }

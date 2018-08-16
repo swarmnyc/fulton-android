@@ -12,14 +12,14 @@ class TopDogPostApiClient : ApiClient() {
         return request {
             paths("posts")
             query("includes" to listOf("tags", "anchor"))
-            subResultType(TopDogPost::class.java)
+            resultTypeGenerics(TopDogPost::class.java)
         }
     }
 
     fun error404(): Promise<ApiManyResult<TopDogPost>> {
         return request {
             paths("404")
-            subResultType(TopDogPost::class.java)
+            resultTypeGenerics(TopDogPost::class.java)
         }
     }
 }
