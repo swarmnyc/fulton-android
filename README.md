@@ -72,24 +72,32 @@ class ProductApiClient : ApiClient() {
 }
 ```
 
-### The main functions of ApiClient
 The following two functions are the basic functions to make HTTP calls.
 - `inline fun <reified T> request(builder: Request.() -> Unit): Promise<T>`, The parameter is a block, that you can initialize the Request Object inside the block. 
 - `fun <T> request(req: Request): Promise<T>`, The parameter is a Request object. 
 
-We recommend you to use the first function because we make it easy to use. For example,
+We recommend you to use the first function because we've worked hard to make it easy to use. For example,
+
 ``` kotlin
-
-fun foo() : Promise<Boo> {
-    return request {
-
+fun foo() : Promise<Bar> {
+    return request { // "this" is a Request object
+        // initialize the Request object inside the lambda function, like
+        paths("bar")
     }
+}
+
+// this serves the same result as the below example
+fun foo() : Promise<Bar> {
+    val req = Request()
+    req.returnType = Boo::class.java
+    req.paths("bar")
+
+    return request(req)
 }
 
 ```
 
-## Request and Response
-
+See [wiki/ApiClient](/wiki/ApiClient) for more detail.
 
 ## Fulton Api Client
 FultonApiClient is a abstract class which matches the features of EntityRouter of [fulton-server](https://github.com/swarmnyc/fulton/tree/master/fulton-server). 
