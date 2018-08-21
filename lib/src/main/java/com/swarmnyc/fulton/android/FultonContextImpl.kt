@@ -8,8 +8,10 @@ import com.swarmnyc.fulton.android.http.RequestExecutor
 import com.swarmnyc.fulton.android.http.RequestExecutorImpl
 import com.swarmnyc.fulton.android.identity.IdentityManager
 import com.swarmnyc.fulton.android.identity.IdentityManagerImpl
+import java.lang.reflect.Type
 
 class FultonContextImpl(context: Context, options: FultonInitOptions) : FultonContext {
+    override var userType: Type = options.userType
     override var defaultCacheDurationMs: Int = options.defaultCacheDurationMs
     override var defaultUseGzip: Boolean = options.defaultUseGzip
     override var defaultReadTimeOutMs: Int? = options.defaultReadTimeOutMs

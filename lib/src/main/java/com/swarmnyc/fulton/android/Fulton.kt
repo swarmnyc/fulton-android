@@ -29,16 +29,19 @@ object Fulton {
         contextRef.set(FultonContextImpl(context, options))
     }
 
-    fun init(context: Context, builder: FultonInitOptions.() -> Unit) {
+    fun init(context: Context, optionsInit: FultonInitOptions.() -> Unit) {
         initialized.set(true)
-        val options = FultonInitOptions()
-        builder(options)
-        contextRef.set(FultonContextImpl(context, options))
+        contextRef.set(createDefaultContext(context, optionsInit))
     }
 
     fun init(context: FultonContext) {
         initialized.set(true)
         contextRef.set(context)
+    }
+
+    fun createDefaultContext(context: Context, optionsInit: FultonInitOptions.() -> Unit) : FultonContext{
+        val options = FultonInitOptions().apply(optionsInit)
+        return FultonContextImpl(context, options)
     }
 
     private val apiClient: AnonymousApiClient by lazy {

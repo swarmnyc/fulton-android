@@ -2,12 +2,13 @@ package com.swarmnyc.fulton.android
 
 import com.swarmnyc.fulton.android.cache.CacheManager
 import com.swarmnyc.fulton.android.error.ApiErrorHandler
-import com.swarmnyc.fulton.android.http.Request
 import com.swarmnyc.fulton.android.http.RequestExecutor
 import com.swarmnyc.fulton.android.identity.IdentityManager
-import com.swarmnyc.promisekt.Promise
+import java.lang.reflect.Type
 
 interface FultonContext {
+    var userType: Type
+
     /**
      * the default cache time
      */

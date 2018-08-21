@@ -1,15 +1,13 @@
 package com.swarmnyc.fulton.android
 
 import com.swarmnyc.fulton.android.cache.CacheManager
-import com.swarmnyc.fulton.android.cache.SqliteCacheManager
 import com.swarmnyc.fulton.android.error.ApiErrorHandler
-import com.swarmnyc.fulton.android.error.VoidApiErrorHandlerImpl
 import com.swarmnyc.fulton.android.http.RequestExecutor
-import com.swarmnyc.fulton.android.http.RequestExecutorImpl
 import com.swarmnyc.fulton.android.identity.IdentityManager
-import com.swarmnyc.fulton.android.identity.IdentityManagerImpl
 import com.swarmnyc.fulton.android.identity.User
 import java.lang.reflect.Type
+
+val voidApiErrorHandler = {_:Throwable -> }
 
 class FultonInitOptions {
     /**
@@ -40,7 +38,7 @@ class FultonInitOptions {
     /**
      * the global error handler
      */
-    var errorHandler: ApiErrorHandler = VoidApiErrorHandlerImpl()
+    var errorHandler: ApiErrorHandler = voidApiErrorHandler
 
     /**
      * the executor to execute http or https request

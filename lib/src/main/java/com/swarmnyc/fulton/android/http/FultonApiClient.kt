@@ -1,5 +1,7 @@
 package com.swarmnyc.fulton.android.http
 
+import com.swarmnyc.fulton.android.Fulton
+import com.swarmnyc.fulton.android.FultonContext
 import com.swarmnyc.fulton.android.error.FultonError
 import com.swarmnyc.fulton.android.error.HttpError
 import com.swarmnyc.promisekt.Promise
@@ -7,8 +9,8 @@ import com.swarmnyc.promisekt.Promise
 /**
  * Api Client for Fulton which is restFul styles api
  * */
-abstract class FultonApiClient : ApiClient() {
-    protected var identityManager = context.identityManager
+abstract class FultonApiClient(context: FultonContext = Fulton.context) : ApiClient(context) {
+    protected val identityManager get() = context.identityManager
 
     override fun initRequest(req: Request) {
         if (identityManager.isValid()) {

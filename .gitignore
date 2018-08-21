@@ -10,6 +10,6 @@
 .DS_Store
 .externalNativeBuild
 
-/build
-/local.properties
-/captures
+build
+local.properties
+captures

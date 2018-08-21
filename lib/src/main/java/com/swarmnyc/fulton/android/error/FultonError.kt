@@ -5,6 +5,7 @@ import com.swarmnyc.fulton.android.http.Response
 import com.swarmnyc.fulton.android.util.fromJson
 import java.util.*
 
+typealias ApiErrorHandler = (error: Throwable) -> Unit
 
 open class HttpError(val request: Request, val response: Response) : Exception(response.error!!.message, response.error!!) {
     var status = response.status

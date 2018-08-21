@@ -2,6 +2,7 @@ package com.swarmnyc.fulton.android.cache
 
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
+import com.swarmnyc.fulton.android.Fulton
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.BeforeClass

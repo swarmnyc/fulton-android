@@ -25,6 +25,24 @@ dependencies {
 # How To
 
 ## Get Started
+Many operations for Android need android.context.Context. Therefore, Fulton-Android needs to initialized before it does anythings.
+
+``` kotlin
+// it can be initialized on create of an application
+class MyApplication : Application() {
+    override fun onCreate() {
+        Fulton.init(this)
+    }
+}
+
+// or on create of an activity
+class MainActivity : Activity() {
+    override fun onCreate() {
+        Fulton.init(this)
+    }
+}
+```
+
 Fulton-Android uses Promise-Like to handle async http request. It is very similar to Promise of JavaScript which is very easy to use. For Example,
 
 ``` kotlin
@@ -43,7 +61,7 @@ Each Api Call returns a Promise object. Then you can use `.then` to do stuff tha
 There are many other features, see [PromiseKt](https://github.com/swarmnyc/PromiseKt) for more information.
 
 ## ApiClient
-ApiClient is a abstract class that handles REST APIs. You can use one ApiClient to handle any requests, but we recommend that creating different ApiClients for different API routes. For Example,
+ApiClient is an abstract class that handles REST APIs. You can use one ApiClient to handle any requests, but we recommend that creating different ApiClients for different API routes. For Example,
 
 ``` kotlin
 /* ProductApiClient handles all API calls of Product */
@@ -100,7 +118,7 @@ fun foo() : Promise<Bar> {
 See [wiki/ApiClient](https://github.com/swarmnyc/fulton-android/wiki/ApiClient) for more detail.
 
 ## FultonApiClient
-FultonApiClient is a abstract class and extends from ApiClient. It is fully designed of handling the request and response for[Fulton Server](https://github.com/swarmnyc/fulton/tree/master/fulton-server) which is a RESULTFul server based on Express. For example,
+FultonApiClient is an abstract class and extends from ApiClient. It is fully designed of handling the request and response for[Fulton Server](https://github.com/swarmnyc/fulton/tree/master/fulton-server) which is a RESULTFul server based on Express. For example,
 
 ``` kotlin
 /* ProductApiClient handles all API calls of Product */
@@ -149,37 +167,295 @@ You can use FultonApiClient even though the API Server doesn't use Fulton Server
     }
     ```
 
-### QueryParams
-QueryParams is the query parameters thats accepted by Fulton Server. 
+See [wiki/FultonApiClient](https://github.com/swarmnyc/fulton-android/wiki/FultonApiClient) for more detail.
 
-It has parts:
+### QueryParams
+QueryParams is the query parameters thats accepted by Fulton Server which gives you very flex way to query data. 
+
+It has these 5 parts:
 - filter
 - sort
-- projection
-- includes
+- projection, to define whether columns should return or not
+- includes, to define whether api should extra data or not
 - pagination
 
 ``` kotlin
-fun listProduct() : Promise<ApiManyResult<Product>> {
-    val qp = queryParams {
-                filter {
-                    "category" to "book"
+fun listProduct(keyword:String) : Promise<ApiManyResult<Product>> {
+    return list {
+        queryParams {
+            filter {
+                "category" to "book"
+                "title" to json {
+                    "like" to keyword
                 }
-                sort "releaseDate"
+            }
+            
+            sort {
+                desc("releaseDate")
+                ase("title")
+            }
 
+            projection {
+                show("price")
+                hide("discount")
+            }
+
+            includes {
+                add("factory")
+            }
+
+            pagination {
+                index = 1
+                size = 100
+            }
+        }
+    }
+}
+
+// or 
+val qp = queryParams { 
+    ...
+}
+
+fun listProduct(qp:queryParams) : Promise<ApiManyResult<Product>> {
+    return list(qp)
+}
+
+// it generates this query string ?filter[category]=book&filter[title][$like]=$keyword&sort=releaseDate-,title&includes=factory&pagination[index]=1&pagination[size]=100
+```
+
+See [wiki/QueryParams](https://github.com/swarmnyc/fulton-android/wiki/QueryParams) for more detail.
+
+### Authentication
+FultonApiClient can handle authentication itself. Currently, Fulton supports bearer token. There are two ways to set the token.
+
+- Fulton.context.identityManager.token or fultonApiClient.context.identityManager.token
+Put the token on the global context or its own context. For example,
+
+``` kotlin
+fun login(username:String, password:String) : Promise<Unit> {
+    return request {
+        paths("login")
+        body("username" to username, "password" to password)
+    }.then {
+        context.identityManager.token = it
+    }
+}
+```
+
+- IdentityApiClient
+Fulton-Android provides IdentityApiClient which matches the authentication of Fulton-Server. You can extends the class and use it. For example,
+
+``` kotlin
+class MyIdentityApiClient : IdentityApiClient() {
+    override val urlRoot = "https://api.your-domain.com/auth"
+}
+
+val identityApiClient = MyIdentityApiClient()
+identityApiClient.login(username, password)
+```
+
+Once the access token has settled, all the coming API calls have `Authorization bearer ${token}` in request headers.
+
+See [wiki/Identity](https://github.com/swarmnyc/fulton-android/wiki/Identity) for more detail.
+
+### Cache
+ApiClient can use cached data for speeding up. The cache logics are 
+- storing response body for GET method for given time (the default value is 5 mins) and the key is the url.
+- when another GET request calls, ApiClient checks if there is a data matched the same url and it isn't expired. Then ApiClient returns the data immediately instead of making real Request.
+
+There are many options to change cache settings.
+
+- set default cache duration
+``` kotlin
+// change the option when initialization
+Fulton.init(this) {
+    defaultCacheDurationMs = 60_000 // set the default cache duration to 1 minute
+}
+
+// or after initialization
+Fulton.context.defaultCacheDurationMs = 60_000 
+```
+
+- set cache duration for each request
+``` kotlin
+fun getData() : Promise<Data> {
+    return request {
+        cacheDurationMs = 0 // if the duration is 0 means no cache for this request.
+    }
+}
+```
+
+- set the CacheManager
+
+Fulton-Android provides two managers,
+1. SqlCacheManager, the default cache manager which stores data in database.
+2. VoidCacheManager, the cache manager does nothing, it can be used in Test.
+
+You also can custom your own cache manager. For example,
+
+``` kotlin
+class MyCacheManager : CacheManager {
+    override fun add(cls: String, url: String, durationMs: Int, data: ByteArray) {
+        ...
     }
 
-    return list {}
+    override fun <T> get(url: String, type: Type): T? {
+        ...
+    }
+
+    override fun clean(cls: String?) {
+        ...
+    }
+}
+
+// to set the cache manager
+Fulton.init(this) {
+    cacheManager = MyCacheManager()
+}
+```
+
+### Error Handling
+Fulton-Android has three places to catch the errors by requests
+
+1. apiClient.onError (error: Throwable): Boolean
+The error handler on ApiClient, the return value tells that the error is handled or not. If the value is true. It means the error is handled, so .catch or Fulton.context.errorHandler won't invoked. For example,
+
+``` kotlin
+class MyApiClient : ApiClient() {
+    override fun onError(error: Throwable): Boolean {
+        ... // do some things
+        return error is MyException
+    }
+}
+```
+
+2. .catch or .catchUi
+Every request returns a Promise object. It supports using .catch and .catchUi to catch errors. For example,
+``` kotlin
+FooApiClient().barList().then {
+    ...
+}.catch {
+    // handle the error in normal thread
+}.catchUi 
+    // handle the error in UI thread
+}
+```
+
+3. global error handler
+You can add a global error handler to catch all of unhandled errors from requests. For example,
+
+``` kotlin
+Fulton.init(this) {
+    errorHandler = { error ->
+        // do some things, like logging the error or show a dialog
+    }
+}
+```
+
+There are two ways to avoid errors go to the global error handler.
+- handle errors on apiClient.onError which mentioned above 
+- set request.shouldSendErrorToErrorHandler = false
+
+For example,
+``` kotlin
+fun getData() : Promise<Data> {
+    return request {
+        shouldSendErrorToErrorHandler = false
+    }
+}
+```
+
+Fulton.context.errorHandler only catches errors from ApiClient. If errors are from .then, .thenUi or other promise methods, the errors are uncaught, these are will go to Promise.uncaught. For example,
+
+``` kotlin
+FooApiClient().barList().then {
+    throw error1
+}.catch {
+    // error1 is caught there
+    throw error2
+}
+
+FooApiClient().barList().then {
+    throw error3
+}
+
+Promise.uncaughtError = {
+    // error2 and error3 are caught there
+}
+```
+
+## FultonContext
+FultonContext stores options and the needs for other objects like ApiClient. There is a global FultonContext created on Fulton.init. By default, if you don't give a specific context. ApiClient and FultonApiClient will use the global context. However, Each ApiClient and FultonApiClient can have its own context. For example,
+
+- use default FultonContext class
+``` kotlin
+// create a default FultonContext by Fulton.createDefaultContext
+class MyApiClient(context: FultonContext): ApiClient(context)
+{
+    ....
+}
+
+fun foo() {
+    val myContext = Fulton.createDefaultContext(this) {
+        ...
+    }
+
+    val myApiClient = MyApiClient(myContext)
+}
+
+// or you can create your own context
+class MyContext : FultonContext {
+    ....
+}
+
+class MyApiClient(): ApiClient(MyContext())
+{
+    ....
 }
 
 ```
 
-### Authentication
-See [wiki/FultonApiClient](https://github.com/swarmnyc/fulton-android/wiki/FultonApiClient) for more detail.
+## Direct Use
+If you want to make a really simple request, you can use Fulton.request. For example,
 
-Cache
-Error Handling
+``` kotlin
+Fulton.request<Foo> {
+    // provide every parameters that request needs
+    urlRoot = "http://api.your-domain.com"
+    paths("bar")
 
-Best Pracitic
+    resultType = Foo::class.java
+}.then {
+    ...
+}
+```
 
-direct use
+## For Test
+Fulton-Android supports a way to mock responses. For example,
+``` kotlin
+// once mockRequestExecutor is not null, ApiClient will use it to execute the request
+Fulton.context.mockRequestExecutor = object : RequestExecutor(){
+    override fun execute(req: Request, callback: RequestCallback) {
+        when (req.url){
+            "https://api.your-domain.com/foo"-> {
+                // return a list
+                callback(req, Response(200, listOf(Foo(), Foo())))
+            } 
+            "https://api.your-domain.com/bar"->{
+                // return a object
+                callback(req, Response(200, Foo()))
+            }
+        }
+    }
+}
+
+MyApiClient().foo().then {
+    // the result from the MockRequestExecutor object
+}
+
+Fulton.context.mockRequestExecutor = null // to cancel mocking
+```
+
+## Best Practice 
+We provide a sample app to show how we uses Fulton-Android with others 3th-party libraries. See [sample](https://github.com/swarmnyc/fulton-android/tree/master/sample) for more information.

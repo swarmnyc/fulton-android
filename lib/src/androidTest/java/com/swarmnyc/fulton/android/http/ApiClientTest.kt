@@ -3,7 +3,7 @@ package com.swarmnyc.fulton.android.http
 import android.support.test.runner.AndroidJUnit4
 import android.util.Log
 import com.swarmnyc.fulton.android.Fulton
-import com.swarmnyc.fulton.android.error.ApiErrorHandler
+import com.swarmnyc.fulton.android.FultonContext
 import com.swarmnyc.fulton.android.model.ModelA
 import com.swarmnyc.fulton.android.model.ModelB
 import com.swarmnyc.fulton.android.model.TopDogAuthor
@@ -163,7 +163,7 @@ class ApiClientTest : BaseFultonTest() {
         val latch = CountDownLatch(1)
         var result = false
 
-        Fulton.context.errorHandler = ApiErrorHandler {
+        Fulton.context.errorHandler = {
             Log.d(TAG, "error called")
             result = true
 

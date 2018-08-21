@@ -2,13 +2,12 @@ package com.swarmnyc.fulton.android.util
 
 import android.support.test.InstrumentationRegistry
 import com.swarmnyc.fulton.android.Fulton
-import com.swarmnyc.fulton.android.cache.VoidCacheManagrImpl
+import com.swarmnyc.fulton.android.cache.VoidCacheManager
 import org.junit.Before
-import org.junit.BeforeClass
 
 abstract class BaseFultonTest {
     companion object {
-        val voidCacheManager = VoidCacheManagrImpl()
+        val voidCacheManager = VoidCacheManager()
     }
 
     /**

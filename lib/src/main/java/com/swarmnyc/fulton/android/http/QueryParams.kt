@@ -17,11 +17,11 @@ class QueryParamSort {
     internal val map = mutableMapOf<String, Boolean>()
 
     fun asc(field: String) {
-        map[field] = false
+        map[field] = true
     }
 
     fun desc(field: String) {
-        map[field] = true
+        map[field] = false
     }
 }
 
@@ -82,17 +82,30 @@ class QueryParamIncludes {
  * ```
  */
 class QueryParams {
+
     /**
-     * the parameter of filter, it can use JSON DSL or JSON Object
+     * the parameter of filter
      */
     var filter: JsonObject? = null
 
+    /**
+     * the parameter of filter
+     */
     fun filter(init: JsonObjectBuilder.() -> Unit) {
         filter = JsonObjectBuilder().json(init)
     }
 
     /**
-     * the parameter of sort, the format is
+     * the parameter of sort
+     * ```
+     * sort = mapOf("sort1" to true, "sort2" to false)
+     * ```
+     * true for ascend, false for descend
+     */
+    var sort: Map<String, Boolean>? = null
+
+    /**
+     * the parameter of sort
      * ```
      * sort {
      *      desc("sort1")
@@ -100,14 +113,21 @@ class QueryParams {
      * }
      * ```
      */
-    var sort: Map<String, Boolean>? = null
-
     fun sort(init: QueryParamSort.() -> Unit) {
         sort = QueryParamSort().apply(init).map
     }
 
     /**
-     * the parameter of the projection, the format is
+     * the parameter of the projection
+     * ```
+     * projection = mapOf("proj1" to true, "proj2" to false)
+     * ```
+     * true for show, false for hide
+     */
+    var projection: Map<String, Boolean>? = null
+
+    /**
+     * the parameter of the projection
      * ```
      * projection {
      *  show("pro1")
@@ -115,28 +135,37 @@ class QueryParams {
      * }
      * ```
      */
-    var projection: Map<String, Boolean>? = null
-
     fun projection(init: QueryParamProjection.() -> Unit) {
         projection = QueryParamProjection().apply(init).map
     }
 
     /**
-     * the parameter of the includes, the format is
+     * the parameter of the includes
+     * ```
+     * includes = listOf("include1", "include2.include2") 
+     * ```
+     */
+    var includes: List<String>? = null
+
+    /**
+     * the parameter of the includes
      * ```
      * includes {
      *    add("include1", "include2.include2")
      * }
      * ```
      */
-    var includes: List<String>? = null
-
     fun includes(init: QueryParamIncludes.() -> Unit) {
         includes = QueryParamIncludes().apply(init).list
     }
 
     /**
-     * the parameter of the pagination, the format is
+     * the parameter of the pagination
+     */
+    var pagination: QueryParamPagination? = null
+
+    /**
+     * the parameter of the pagination
      * ```
      * pagination {
      *      index = 1
@@ -144,20 +173,24 @@ class QueryParams {
      * }
      * ```
      */
-    var pagination: QueryParamPagination? = null
-
     fun pagination(init: QueryParamPagination.() -> Unit) {
         pagination = QueryParamPagination().apply(init)
     }
 
     /**
-     * the parameter of query, the format is
+     * the parameter of query
      * ```
-     * query("field2" to any, "field1" to any)
+     * query = mapOf("field2" to any, "field1" to any)
      * ```
      */
     var query: Map<String, String>? = null
 
+    /**
+     * the parameter of query
+     * ```
+     * query("field2" to any, "field1" to any)
+     * ```
+     */
     fun query(vararg pair: Pair<String, String>) {
         query = pair.toMap()
     }

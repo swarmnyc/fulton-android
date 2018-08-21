@@ -18,7 +18,6 @@ class Request {
     var url: String? = null
 
     var useGzip: Boolean = Fulton.context.defaultUseGzip
-    var body: Any? = null
 
     var startedAt = System.currentTimeMillis()
 
@@ -98,6 +97,25 @@ class Request {
     }
 
     /**
+     * the body for POST, PUT and PATCH
+     */
+    var body: Any? = null
+
+    /**
+     * the body for POST, PUT and PATCH
+     */
+    fun body(value: Any?) {
+        body = value
+    }
+
+    /**
+     * the body for POST, PUT and PATCH
+     */
+    fun body(vararg value: Pair<String, Any>) {
+        body = value.toMap()
+    }
+
+    /**
      * if the value is set, will use this response directly
      */
     var mockResponse: Response? = null
@@ -127,7 +145,7 @@ class Request {
         }
 
         if (queryString != null) {
-            if (queryString!!.startsWith("&")){
+            if (queryString!!.startsWith("&")) {
                 queryString = queryString!!.substring(1)
             }
 

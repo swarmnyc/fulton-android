@@ -129,22 +129,28 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
     protected open fun <T> handelError(promise: Promise<T>, req: Request, res: Response) {
         val apiError = createError(req, res)
 
-        onError(apiError)
-
-        promise.catch {
-            if (req.shouldSendErrorToErrorHandler) {
-                context.errorHandler.onError(apiError)
+        if (!onError(apiError)) {
+            promise.catch {
+                if (req.shouldSendErrorToErrorHandler) {
+                    context.errorHandler(apiError)
+                }
             }
-        }
 
-        promise.reject(apiError)
+            promise.reject(apiError)
+        }
     }
 
     protected open fun createError(req: Request, res: Response): Throwable {
         return HttpError(req, res)
     }
 
-    protected open fun onError(error: Throwable) {}
+    /**
+     * The error handler on ApiClient
+     * @return if true, it means the error is handled, so .catch or Fulton.context.errorHandler.onError won't invoked.
+     */
+    protected open fun onError(error: Throwable): Boolean {
+        return false
+    }
 
     protected open fun cacheData(url: String, cache: Int, byteArray: ByteArray) {
         context.cacheManager.add(this.javaClass.simpleName, url, cache, byteArray)
