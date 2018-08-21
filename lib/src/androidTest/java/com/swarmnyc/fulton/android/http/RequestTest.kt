@@ -161,8 +161,8 @@ class RequestTest : BaseFultonTest() {
                         }
 
                         sort {
-                            desc("sort1")
-                            asc("sort2")
+                            asc("sort1")
+                            desc("sort2")
                         }
 
                         projection {
@@ -174,13 +174,10 @@ class RequestTest : BaseFultonTest() {
                             add("include1", "include2.include2")
                         }
 
+
                         pagination {
                             index = 1
                             size = 100
-                        }
-
-                        includes {
-                            add("include1", "include2.include2")
                         }
                     }
 

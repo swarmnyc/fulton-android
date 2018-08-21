@@ -95,12 +95,16 @@ class RequestExecutorImpl : RequestExecutor() {
             buildString {
                 appendln("<-- ${res.status} (${res.url})")
                 appendln("Time Spent : $time")
-                appendln("Length : ${res.contentLength}")
-                appendln("Headers : (${res.headers.size})")
-                for ((key, value) in res.headers) {
-                    appendln("$key : $value")
+                if (res.error == null) {
+                    appendln("Length : ${res.contentLength}")
+                    appendln("Headers : (${res.headers.size})")
+                    for ((key, value) in res.headers) {
+                        appendln("$key : $value")
+                    }
+                    appendln("Body : ${if (res.data.isNotEmpty()) String(res.data) else "(empty)"}")
+                } else {
+                    appendln("ERROR : ${res.error!!.message}")
                 }
-                appendln("Body : ${if (res.data.isNotEmpty()) String(res.data) else "(empty)"}")
             }
         }
 
