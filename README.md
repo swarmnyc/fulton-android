@@ -458,4 +458,6 @@ Fulton.context.mockRequestExecutor = null // to cancel mocking
 ```
 
 ## Best Practice 
-We provide a sample app to show how we uses Fulton-Android with others 3th-party libraries. See [sample](https://github.com/swarmnyc/fulton-android/tree/master/sample) for more information.
+We provide a sample app to show how we uses Fulton-Android with others libraries. 
+
+See [sample](https://github.com/swarmnyc/fulton-android/tree/master/sample) for more information.
