@@ -32,6 +32,6 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${versions.kotlin}"
     implementation 'com.android.support.constraint:constraint-layout:1.1.2'
 
-//    implementation 'com.github.swarmnyc:fulton-android:1.0.4'
-    implementation project(":lib") //for debug
+    implementation 'com.github.swarmnyc:fulton-android:1.0.4'
+//    implementation project(":lib") //for debug
 }
