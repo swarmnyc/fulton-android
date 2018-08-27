@@ -20,10 +20,7 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep public class com.swarmnyc.fulton.android.Fulton { *; }
--keep public class com.swarmnyc.fulton.android.FultonContextImpl { *; }
--keep public interface com.swarmnyc.fulton.android.FultonContext { *; }
-
+-keep public class com.swarmnyc.fulton.** { *; }
 
 ### For joda
 -dontnote org.joda.**
