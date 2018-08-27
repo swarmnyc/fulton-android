@@ -18,7 +18,7 @@ class RequestExecutorImpl : RequestExecutor() {
         }
 
         Logger.Api.d {
-            val msg = buildString {
+            buildString {
                 appendln("--> ${req.method} (${req.url})")
                 appendln("Body : ${if (req.body == null) "(empty)" else req.body?.toJson()}")
                 appendln("Headers : (${req.headers.size})")
@@ -27,8 +27,6 @@ class RequestExecutorImpl : RequestExecutor() {
                     appendln("$key : $value")
                 }
             }
-
-            "--> ${req.method} (${req.url})\n$msg"
         }
 
         var conn: HttpURLConnection? = null

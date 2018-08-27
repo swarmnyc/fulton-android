@@ -50,12 +50,12 @@ class SqliteCacheManager(context: Context) : CacheManager {
         val time = System.currentTimeMillis()
         val cursor = db.query(
                 TableName,
-                arrayOf(FieldData),
+                arrayOf(FieldData, FieldExpiredAt),
                 "$FieldURL = '${url.urlEncode()}' AND $FieldExpiredAt > $time",
                 arrayOf(), null, null, null)
 
         val data: T? = if (cursor.moveToFirst()) {
-            Logger.Cache.d { "Find Cache for $url" }
+            Logger.Cache.d { "Find Cache for $url and timeout: ${cursor.getLong(0) - time}" }
             cursor.getBlob(0).fromJson(type)
         } else {
             Logger.Cache.d { "No Cache for $url and $time" }
