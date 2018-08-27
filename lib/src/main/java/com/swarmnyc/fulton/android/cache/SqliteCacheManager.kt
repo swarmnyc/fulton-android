@@ -55,10 +55,10 @@ class SqliteCacheManager(context: Context) : CacheManager {
                 arrayOf(), null, null, null)
 
         val data: T? = if (cursor.moveToFirst()) {
-            Logger.Cache.d { "Find Cache for $url and timeout: ${cursor.getLong(0) - time}" }
+            Logger.Cache.d { "Find Cache for $url and timeout: ${cursor.getLong(1) - time}" }
             cursor.getBlob(0).fromJson(type)
         } else {
-            Logger.Cache.d { "No Cache for $url and $time" }
+            Logger.Cache.d { "No Cache for $url" }
             null
         }
 

@@ -20,7 +20,8 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep public class com.swarmnyc.fulton.** { *; }
+-keep class com.swarmnyc.fulton.** { *; }
+-keep interface com.swarmnyc.fulton.** { *; }
 
 ### For joda
 -dontnote org.joda.**
