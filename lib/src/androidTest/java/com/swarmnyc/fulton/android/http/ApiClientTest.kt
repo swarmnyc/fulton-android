@@ -2,18 +2,19 @@ package com.swarmnyc.fulton.android.http
 
 import android.support.test.runner.AndroidJUnit4
 import android.util.Log
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.swarmnyc.fulton.android.Fulton
-import com.swarmnyc.fulton.android.FultonContext
-import com.swarmnyc.fulton.android.model.ModelA
-import com.swarmnyc.fulton.android.model.ModelB
-import com.swarmnyc.fulton.android.model.TopDogAuthor
-import com.swarmnyc.fulton.android.model.TopDogPost
+import com.swarmnyc.fulton.android.error.HttpError
+import com.swarmnyc.fulton.android.model.*
 import com.swarmnyc.fulton.android.real.TopDogPostApiClient
 import com.swarmnyc.fulton.android.util.BaseFultonTest
+import com.swarmnyc.fulton.android.util.RequestExecutorMock
 import com.swarmnyc.fulton.android.util.toJson
 import com.swarmnyc.promisekt.Promise
 import com.swarmnyc.promisekt.util.await
 import org.junit.Assert.assertEquals
+import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.CountDownLatch
@@ -195,7 +196,7 @@ class ApiClientTest : BaseFultonTest() {
 
     @Test
     fun mockRequestExecutorTest() {
-        Fulton.context.mockRequestExecutor = object : MockRequestExecutor() {
+        Fulton.context.requestExecutorMock = object : RequestExecutorMock(Fulton.context) {
             override fun mockResponse(req: Request): Response {
                 val author = TopDogAuthor("1", "test-author", "")
                 return Response(200, ApiManyResult(listOf(TopDogPost("1", "test", listOf(), "", "", "", author, listOf()))))
@@ -206,7 +207,7 @@ class ApiClientTest : BaseFultonTest() {
 
         val result = apiClient.listPosts().await()!!
 
-        Fulton.context.mockRequestExecutor = null
+        Fulton.context.requestExecutorMock = null
 
         assertEquals("test-author", result.data[0].author.name)
     }
@@ -225,5 +226,22 @@ class ApiClientTest : BaseFultonTest() {
         }.await()!!
 
         assertEquals("test-author", result.name)
+    }
+
+    @Test
+    fun jsonConvertErrorApiClientTest() {
+        try {
+            Fulton.request<ArrayList<Any>> {
+                urlRoot = "http://api.fulton.com"
+                resultType = ArrayList::class.java
+                resultTypeGenerics(JsonObject::class.java)
+
+                mockResponse = Response(200, TopDogAuthor("1", "test-author", ""))
+            }.await(true)
+
+            fail()
+        } catch (e: HttpError) {
+            assertEquals(Response.ErrorCodeJsonConvertError, e.status)
+        }
     }
 }

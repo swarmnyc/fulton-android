@@ -4,7 +4,9 @@ import android.util.Log
 
 internal open class Logger(val tag: String) {
     fun d(msg: String) {
-        Log.d(tag, msg)
+        if (Log.isLoggable(tag, Log.DEBUG)) {
+            Log.d(tag, msg)
+        }
     }
 
     fun d(builder: () -> String) {
@@ -13,8 +15,14 @@ internal open class Logger(val tag: String) {
         }
     }
 
+    fun e(msg: String, e: Throwable) {
+        Log.d(tag, msg, e)
+    }
+
     object Api : Logger("fulton.api")
 
     object Cache : Logger("fulton.cache")
+
+    object Network : Logger("fulton.network")
 }
 

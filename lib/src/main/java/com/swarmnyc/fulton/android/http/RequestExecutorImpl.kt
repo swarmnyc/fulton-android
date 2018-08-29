@@ -1,6 +1,7 @@
 package com.swarmnyc.fulton.android.http
 
 import android.util.Log
+import com.swarmnyc.fulton.android.FultonContext
 import com.swarmnyc.fulton.android.util.Logger
 import com.swarmnyc.fulton.android.util.toJson
 import java.io.OutputStreamWriter
@@ -11,7 +12,7 @@ import java.util.zip.GZIPOutputStream
 
 private const val GZip = "gzip"
 
-class RequestExecutorImpl : RequestExecutor() {
+class RequestExecutorImpl(context: FultonContext) : RequestExecutor(context) {
     override fun execute(req: Request, callback: RequestCallback) {
         if (req.useGzip) {
             req.headers("Content-Encoding" to GZip, "Accept-Encoding" to GZip)
@@ -29,62 +30,66 @@ class RequestExecutorImpl : RequestExecutor() {
             }
         }
 
-        var conn: HttpURLConnection? = null
-        val res: Response = try {
-            val url = URL(req.url)
-            conn = url.openConnection() as HttpURLConnection
+        val res: Response = if (context.isNetworkAvailable == false) {
+            Response.ErrorNetworkUnavailable
+        } else {
+            var conn: HttpURLConnection? = null
+            try {
+                val url = URL(req.url)
+                conn = url.openConnection() as HttpURLConnection
 
-            conn.apply {
-                doInput = true
-                if (req.connectionTimeOutMs != null) connectTimeout = req.connectionTimeOutMs!!
-                if (req.readTimeOutMs != null) readTimeout = req.readTimeOutMs!!
+                conn.apply {
+                    doInput = true
+                    if (req.connectionTimeOutMs != null) connectTimeout = req.connectionTimeOutMs!!
+                    if (req.readTimeOutMs != null) readTimeout = req.readTimeOutMs!!
 
-                requestMethod = if (req.method == Method.PATCH) Method.POST.value else req.method.value
-                instanceFollowRedirects = true
+                    requestMethod = if (req.method == Method.PATCH) Method.POST.value else req.method.value
+                    instanceFollowRedirects = true
 
-                for ((key, value) in req.headers) {
-                    setRequestProperty(key, value)
+                    for ((key, value) in req.headers) {
+                        setRequestProperty(key, value)
+                    }
+
+                    if (req.method == Method.PATCH) {
+                        setRequestProperty("X-HTTP-Method-Override", "PATCH")
+                    }
+
+                    if (req.body != null) {
+                        conn.doOutput = true
+
+                        val writer = OutputStreamWriter(if (req.useGzip) {
+                            GZIPOutputStream(conn.outputStream)
+                        } else {
+                            conn.outputStream
+                        })
+
+                        req.body!!.toJson(writer)
+
+                        writer.flush()
+                        writer.close()
+                    }
+
+                    connect()
                 }
 
-                if (req.method == Method.PATCH) {
-                    setRequestProperty("X-HTTP-Method-Override", "PATCH")
+                val stream = conn.errorStream ?: conn.inputStream
+
+                val contentEncoding = conn.contentEncoding ?: ""
+
+                val data = if (contentEncoding.compareTo(GZip, true) == 0) {
+                    GZIPInputStream(stream).readBytes()
+                } else {
+                    stream.readBytes()
                 }
 
-                if (req.body != null) {
-                    conn.doOutput = true
+                stream.close()
 
-                    val writer = OutputStreamWriter(if (req.useGzip) {
-                        GZIPOutputStream(conn.outputStream)
-                    } else {
-                        conn.outputStream
-                    })
-
-                    req.body!!.toJson(writer)
-
-                    writer.flush()
-                    writer.close()
-                }
-
-                connect()
+                Response(conn.url.toString(), conn.responseCode, conn.headerFields.filterKeys { it != null }, data, null)
+            } catch (e: Exception) {
+                Response(Response.ErrorCodeRequestError, e)
+            } finally {
+                conn?.disconnect()
             }
-
-            val stream = conn.errorStream ?: conn.inputStream
-
-            val contentEncoding = conn.contentEncoding ?: ""
-
-            val data = if (contentEncoding.compareTo(GZip, true) == 0) {
-                GZIPInputStream(stream).readBytes()
-            } else {
-                stream.readBytes()
-            }
-
-            stream.close()
-
-            Response(conn.url.toString(), conn.responseCode, conn.headerFields.filterKeys { it != null }, data, null)
-        } catch (e: Exception) {
-            Response(error = e)
-        } finally {
-            conn?.disconnect()
         }
 
         Logger.Api.d {

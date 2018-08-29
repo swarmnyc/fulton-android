@@ -388,7 +388,7 @@ Promise.uncaughtError = {
 ## FultonContext
 FultonContext stores options and the need for other objects like ApiClient. There is a global FultonContext created on Fulton.init. By default, it is used if you don't give a specific context. ApiClient and FultonApiClient will use the global context. However, Each ApiClient and FultonApiClient can have its own context. For example:
 
-- use default FultonContext class
+**use default FultonContext class**
 ``` kotlin
 // create a default FultonContext by Fulton.createDefaultContext
 class MyApiClient(context: FultonContext): ApiClient(context)
@@ -416,6 +416,27 @@ class MyApiClient(): ApiClient(MyContext())
 
 ```
 
+## Network State Monitor
+Fulton-Android supports monitoring the networks of the devices, it this feature is enabled. It throws error immediately if network is unavailable.
+
+- to enable network state monitor
+``` kotlin
+Fulton.init(this) {
+    networkStateMonitorEnabled = true
+}
+
+// get the state of network
+Fulton.context.isNetworkAvailable
+```
+
+- to stop network state monitor
+``` kotlin
+// get the state of network
+Fulton.context.stopNetworkStateMonitor()
+```
+
+This feature only supports if the devices is Android 7.0 or above. Also, it stops monitoring if the app go to background and starts monitoring if the app come back to foreground.
+
 ## Direct Use
 If you want to make a simple request, you can use Fulton.request. For example:
 
@@ -434,8 +455,8 @@ Fulton.request<Foo> {
 ## For Test
 Fulton-Android supports a way to mock responses. For example:
 ``` kotlin
-// once mockRequestExecutor is not null, ApiClient will use it to execute the request
-Fulton.context.mockRequestExecutor = object : RequestExecutor(){
+// once requestExecutorMock is not null, ApiClient will use it to execute the request
+Fulton.context.requestExecutorMock = object : RequestExecutor(){
     override fun execute(req: Request, callback: RequestCallback) {
         when (req.url){
             "https://api.your-domain.com/foo"-> {

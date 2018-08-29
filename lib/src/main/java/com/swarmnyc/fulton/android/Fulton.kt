@@ -48,8 +48,8 @@ object Fulton {
         AnonymousApiClient()
     }
 
-    fun <T> request(builder: Request.() -> Unit): Promise<T> {
-        return apiClient.newRequest(builder)
+    fun <T> request(init: Request.() -> Unit): Promise<T> {
+        return apiClient.newRequest(init)
     }
 }
 

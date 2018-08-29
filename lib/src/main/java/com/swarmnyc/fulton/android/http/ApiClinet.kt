@@ -1,5 +1,6 @@
 package com.swarmnyc.fulton.android.http
 
+import com.google.gson.JsonSyntaxException
 import com.swarmnyc.fulton.android.Fulton
 import com.swarmnyc.fulton.android.FultonContext
 import com.swarmnyc.fulton.android.error.HttpError
@@ -36,7 +37,7 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
     protected fun <T> request(req: Request): Promise<T> {
         initRequest(req)
 
-        if (req.urlRoot == null) req.urlRoot = req.urlRoot
+        if (req.urlRoot == null) req.urlRoot = urlRoot
         if (req.url == null) req.buildUrl()
 
         req.buildDataType()
@@ -71,7 +72,7 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
             return
         }
 
-        val executor = context.mockRequestExecutor ?: context.requestExecutor
+        val executor = context.requestExecutorMock ?: context.requestExecutor
 
         executor.execute(req) { request, response ->
             endRequest(promise, request, response)
@@ -82,7 +83,12 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
         if (res.error == null) {
             try {
                 handleSuccess(promise, req, res)
-            } catch (e: Throwable) {
+            } catch (e: JsonSyntaxException) {
+                res.status = Response.ErrorCodeJsonConvertError
+                res.error = e
+                handelError(promise, req, res)
+            }
+            catch (e: Throwable) {
                 res.error = e
                 handelError(promise, req, res)
             }

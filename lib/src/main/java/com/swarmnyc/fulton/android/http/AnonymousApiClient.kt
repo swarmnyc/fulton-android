@@ -5,14 +5,8 @@ import com.swarmnyc.promisekt.Promise
 internal class AnonymousApiClient : ApiClient() {
     override val urlRoot: String = ""
 
-    fun <T> newRequest(builder: Request.() -> Unit): Promise<T> {
-        val req = Request()
-
-        builder(req)
-
-        if (req.url == null) req.buildUrl()
-
-        req.buildDataType()
+    fun <T> newRequest(init: Request.() -> Unit): Promise<T> {
+        val req = Request().apply(init)
 
         return request(req)
     }

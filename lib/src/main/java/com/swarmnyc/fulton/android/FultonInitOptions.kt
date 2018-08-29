@@ -59,4 +59,9 @@ class FultonInitOptions {
      * the manager of cache, the default value is SqliteCacheManager
      */
     var cacheManager: CacheManager? = null
+
+    /**
+     * if true, the fulton will start monitor network statu
+     */
+    var networkStateMonitorEnabled: Boolean = false
 }

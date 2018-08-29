@@ -32,6 +32,11 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${versions.kotlin}"
     implementation 'com.android.support.constraint:constraint-layout:1.1.2'
 
-    implementation 'com.github.swarmnyc:fulton-android:1.0.5'
-//    implementation project(":lib") //for debug
+//    implementation 'com.github.swarmnyc:fulton-android:1.0.5'
+
+    //for debug
+    implementation project(":lib")
+    implementation 'com.github.swarmnyc.promisekt:promisekt-android:1.0.3'
+    implementation 'com.google.code.gson:gson:2.8.2'
+    implementation 'joda-time:joda-time:2.3'
 }

@@ -158,6 +158,7 @@ class Request {
     fun buildDataType() {
         if (resultType != null && resultTypeGenerics != null) {
             this.resultType = GenericType(resultType!!, *resultTypeGenerics!!.toTypedArray())
+            resultTypeGenerics = null
         }
     }
 
