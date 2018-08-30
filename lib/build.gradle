@@ -35,5 +35,5 @@ dependencies {
     implementation 'joda-time:joda-time:2.3'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$versions.kotlin"
 
-    implementation 'com.github.swarmnyc.promisekt:promisekt-android:1.0.3'
+    implementation 'com.github.swarmnyc.promisekt:promisekt-android:1.+'
 }
