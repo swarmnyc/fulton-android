@@ -26,7 +26,7 @@ class FultonContextImpl(val context: Context, options: FultonInitOptions) : Fult
     override var requestExecutor: RequestExecutor = options.requestExecutor
             ?: RequestExecutorImpl(this)
 
-    override var requestExecutorMock: RequestExecutor? = options.mockRequestExecutor
+    override var requestExecutorMock: RequestExecutor? = options.requestExecutorMock
 }
 
 

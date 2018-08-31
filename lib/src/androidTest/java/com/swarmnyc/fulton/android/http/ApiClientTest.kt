@@ -2,14 +2,12 @@ package com.swarmnyc.fulton.android.http
 
 import android.support.test.runner.AndroidJUnit4
 import android.util.Log
-import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.swarmnyc.fulton.android.Fulton
 import com.swarmnyc.fulton.android.error.HttpError
 import com.swarmnyc.fulton.android.model.*
 import com.swarmnyc.fulton.android.real.TopDogPostApiClient
 import com.swarmnyc.fulton.android.util.BaseFultonTest
-import com.swarmnyc.fulton.android.util.RequestExecutorMock
 import com.swarmnyc.fulton.android.util.toJson
 import com.swarmnyc.promisekt.Promise
 import com.swarmnyc.promisekt.util.await
@@ -196,10 +194,11 @@ class ApiClientTest : BaseFultonTest() {
 
     @Test
     fun mockRequestExecutorTest() {
-        Fulton.context.requestExecutorMock = object : RequestExecutorMock(Fulton.context) {
-            override fun mockResponse(req: Request): Response {
+        Fulton.context.requestExecutorMock = object : RequestExecutor {
+            override fun execute(req: Request, callback: RequestCallback) {
                 val author = TopDogAuthor("1", "test-author", "")
-                return Response(200, ApiManyResult(listOf(TopDogPost("1", "test", listOf(), "", "", "", author, listOf()))))
+
+                callback(req, Response(200, ApiManyResult(listOf(TopDogPost("1", "test", listOf(), "", "", "", author, listOf())))))
             }
         }
 

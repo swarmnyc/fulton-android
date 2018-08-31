@@ -48,7 +48,7 @@ class FultonInitOptions {
     /**
      * if the value is not null, the api client will use this executor to start request
      */
-    var mockRequestExecutor: RequestExecutor? = null
+    var requestExecutorMock: RequestExecutor? = null
 
     /**
      * the manager of identity, the default value is IdentityManagerImpl

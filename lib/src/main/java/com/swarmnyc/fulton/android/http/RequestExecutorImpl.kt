@@ -13,7 +13,7 @@ import java.util.zip.GZIPOutputStream
 
 private const val GZip = "gzip"
 
-class RequestExecutorImpl(context: FultonContext) : RequestExecutor(context) {
+class RequestExecutorImpl(val context: FultonContext) : RequestExecutor {
     override fun execute(req: Request, callback: RequestCallback) {
         if (req.useGzip) {
             req.headers("Content-Encoding" to GZip, "Accept-Encoding" to GZip)
