@@ -44,7 +44,7 @@ class SqliteCacheManager(context: Context) : CacheManager {
         }
     }
 
-    override fun <T> get(url: String, type: Type): T? {
+    override fun get(url: String): ByteArray? {
         cleanOld()
 
         val time = System.currentTimeMillis()
@@ -54,9 +54,9 @@ class SqliteCacheManager(context: Context) : CacheManager {
                 "$FieldURL = '${url.urlEncode()}' AND $FieldExpiredAt > $time",
                 arrayOf(), null, null, null)
 
-        val data: T? = if (cursor.moveToFirst()) {
+        val data = if (cursor.moveToFirst()) {
             Logger.Cache.d { "Find Cache for $url and timeout: ${cursor.getLong(1) - time}" }
-            cursor.getBlob(0).fromJson(type)
+            cursor.getBlob(0)
         } else {
             Logger.Cache.d { "No Cache for $url" }
             null

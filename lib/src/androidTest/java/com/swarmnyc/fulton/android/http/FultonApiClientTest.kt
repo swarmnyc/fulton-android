@@ -1,7 +1,10 @@
 package com.swarmnyc.fulton.android.http
 
+import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import com.swarmnyc.fulton.android.Fulton
+import com.swarmnyc.fulton.android.error.FultonApiErrorResult
+import com.swarmnyc.fulton.android.error.FultonError
 import com.swarmnyc.fulton.android.identity.AccessToken
 import com.swarmnyc.fulton.android.model.TopDogAuthor
 import com.swarmnyc.fulton.android.util.BaseFultonTest
@@ -78,7 +81,7 @@ class FultonApiClientTest : BaseFultonTest() {
                 return list {
                     paths("list", "abc")
 
-                    mockResponse = Response(200 , data = ApiManyResult(listOf<TopDogAuthor>()))
+                    mockResponse = Response(200, data = ApiManyResult(listOf<TopDogAuthor>()))
                 }
             }
 
@@ -107,6 +110,30 @@ class FultonApiClientTest : BaseFultonTest() {
         }
 
         val result = apiClient.getAuthor("abc").await()!!
+
+        assertEquals("abc", result.id)
+    }
+
+    @Test
+    fun detailWithCacheTest() {
+        Fulton.init(InstrumentationRegistry.getContext()) // use sql lite
+
+        val apiClient = object : FultonApiClient() {
+            override val urlRoot: String = "http://api.fulton.com"
+
+            fun getAuthor(id: String): Promise<TopDogAuthor> {
+                return detail(id) {
+                    val data = ApiOneResult(TopDogAuthor(id, "Test1", "abc"))
+                    mockResponse = Response(200, data)
+                }
+            }
+        }
+
+        var result = apiClient.getAuthor("abc").await()!!
+
+        assertEquals("abc", result.id)
+
+        result = apiClient.getAuthor("abc").await()!!
 
         assertEquals("abc", result.id)
     }
@@ -198,5 +225,42 @@ class FultonApiClientTest : BaseFultonTest() {
         }
 
         apiClient.delete("1").await()
+    }
+
+    @Test
+    fun errorTest() {
+        val apiClient = object : FultonApiClient() {
+            override val urlRoot: String = "http://api.fulton.com"
+
+            fun getAuthor(id: String): Promise<TopDogAuthor> {
+                return detail(id) {
+                    val data = "{\n" +
+                            "    \"error\": {\n" +
+                            "        \"code\": \"invalid_query_parameters\",\n" +
+                            "        \"detail\": {\n" +
+                            "            \"filter._id\": [\n" +
+                            "                {\n" +
+                            "                    \"code\": \"object_id\",\n" +
+                            "                    \"message\": \"_id must be an object id\"\n" +
+                            "                }\n" +
+                            "            ]\n" +
+                            "        }\n" +
+                            "    }\n" +
+                            "}"
+
+                    mockResponse = Response("", 400, mapOf("Content-Type" to listOf("application/json")), data.toByteArray(), null)
+                }
+            }
+        }
+
+        var result: String? = null
+
+        apiClient.getAuthor("abc").catch {
+            if (it is FultonError) {
+                result = it.items["filter._id"]!![0].code
+            }
+        }.await(false)
+
+        assertEquals("object_id", result)
     }
 }

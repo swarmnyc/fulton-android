@@ -3,6 +3,7 @@ package com.swarmnyc.fulton.android.cache
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import com.swarmnyc.fulton.android.Fulton
+import com.swarmnyc.fulton.android.util.fromJson
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.BeforeClass
@@ -28,7 +29,7 @@ class SqliteCacheManagerTest {
         manager.add("test", "url", 10000, "Test1".toByteArray())
         manager.add("test", "url", 10000, "Test2".toByteArray())
 
-        val result = manager.get<String>("url", String::class.java)
+        val result = manager.get("url")!!.fromJson<String>()
 
         assertEquals("Test2", result)
     }
@@ -39,18 +40,18 @@ class SqliteCacheManagerTest {
         val manager = SqliteCacheManager(InstrumentationRegistry.getTargetContext())
         manager.add("test", "url3", 1500, "Test".toByteArray())
 
-        assertEquals("Test", manager.get<String>("url3", String::class.java))
+        assertEquals("Test", manager.get("url3")!!.fromJson<String>())
 
         Thread.sleep(2000)
 
-        assertEquals(null, manager.get<String>("url3", String::class.java))
+        assertEquals(null, manager.get("url3"))
 
     }
 
     @Test
     fun nullTest() {
         val manager = SqliteCacheManager(InstrumentationRegistry.getTargetContext())
-        val result = manager.get<String>("url2", String::class.java)
+        val result = manager.get("url2")
 
         assertNull(result)
     }
@@ -63,7 +64,7 @@ class SqliteCacheManagerTest {
 
         manager.clean()
 
-        val result =  manager.get<String>("url1", String::class.java)
+        val result =  manager.get("url1")
 
         assertNull(result)
     }

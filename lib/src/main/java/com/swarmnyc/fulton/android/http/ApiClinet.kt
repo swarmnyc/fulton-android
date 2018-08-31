@@ -7,6 +7,7 @@ import com.swarmnyc.fulton.android.error.HttpError
 import com.swarmnyc.promisekt.Promise
 import com.swarmnyc.fulton.android.util.GenericType
 import com.swarmnyc.fulton.android.util.fromJson
+import java.lang.reflect.Type
 
 
 /**
@@ -48,9 +49,10 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
         return if (error == null) {
             Promise { promise ->
                 if (req.method == Method.GET && req.cacheDurationMs > 0) {
-                    val cacheResult = Fulton.context.cacheManager.get<T>(req.url!!, req.resultType!!)
-                    if (cacheResult != null) {
+                    val cacheData = Fulton.context.cacheManager.get(req.url!!)
+                    if (cacheData != null) {
                         // cache hits
+                        val cacheResult = deserialize<T>(req.resultType!!, cacheData)
                         promise.resolve(cacheResult)
 
                         return@Promise
@@ -87,8 +89,7 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
                 res.status = Response.ErrorCodeJsonConvertError
                 res.error = e
                 handelError(promise, req, res)
-            }
-            catch (e: Throwable) {
+            } catch (e: Throwable) {
                 res.error = e
                 handelError(promise, req, res)
             }
@@ -98,33 +99,14 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
     }
 
     protected open fun <T> handleSuccess(promise: Promise<T>, req: Request, res: Response) {
-        var shouldCache = req.method == Method.GET && req.cacheDurationMs > 0
-
-        val dataType = if (req.resultType is GenericType) {
-            (req.resultType as GenericType).rawType
-        } else {
-            req.resultType
-        }
-
-        val result: T = when (dataType) {
-            Unit::class.java, Nothing::class.java -> {
-                shouldCache = false
-                @Suppress("UNCHECKED_CAST")
-                Unit as T
-            }
-            ApiOneResult::class.java -> {
-                // result is { data : T }, but convert to return T, so when using can skip .data
-                res.data.fromJson<ApiOneResult<T>>(req.resultType!!).data
-            }
-            else -> {
-                res.data.fromJson(req.resultType!!)
-            }
-        }
+        val result = deserialize<T>(req.resultType!!, res.data)
 
         if (result == null) {
             promise.reject(Exception("Api result is empty"))
         } else {
-            if (shouldCache) {
+            val shouldCache = req.method == Method.GET && req.cacheDurationMs > 0
+
+            if (shouldCache && result !is Unit) {
                 cacheData(req.url!!, req.cacheDurationMs, res.data)
             }
 
@@ -143,6 +125,24 @@ abstract class ApiClient(val context: FultonContext = Fulton.context) {
             }
 
             promise.reject(apiError)
+        }
+    }
+
+    protected open fun <T> deserialize(type: Type, data: ByteArray): T {
+        val dataType = if (type is GenericType) {
+            type.rawType
+        } else {
+            type
+        }
+
+        return when (dataType) {
+            Unit::class.java, Nothing::class.java -> {
+                @Suppress("UNCHECKED_CAST")
+                Unit as T
+            }
+            else -> {
+                data.fromJson(type)
+            }
         }
     }
 

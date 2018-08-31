@@ -4,7 +4,10 @@ import com.swarmnyc.fulton.android.Fulton
 import com.swarmnyc.fulton.android.FultonContext
 import com.swarmnyc.fulton.android.error.FultonError
 import com.swarmnyc.fulton.android.error.HttpError
+import com.swarmnyc.fulton.android.util.GenericType
+import com.swarmnyc.fulton.android.util.fromJson
 import com.swarmnyc.promisekt.Promise
+import java.lang.reflect.Type
 
 /**
  * Api Client for Fulton which is restFul styles api
@@ -141,6 +144,28 @@ abstract class FultonApiClient(context: FultonContext = Fulton.context) : ApiCli
             FultonError(req, res)
         } else {
             HttpError(req, res)
+        }
+    }
+
+    override fun <T> deserialize(type: Type, data: ByteArray): T {
+        val dataType = if (type is GenericType) {
+            type.rawType
+        } else {
+            type
+        }
+
+        return when (dataType) {
+            Unit::class.java, Nothing::class.java -> {
+                @Suppress("UNCHECKED_CAST")
+                Unit as T
+            }
+            ApiOneResult::class.java -> {
+                // result is { data : T }, but convert to return T, so when using can skip .data
+                data.fromJson<ApiOneResult<T>>(type).data
+            }
+            else -> {
+                data.fromJson(type)
+            }
         }
     }
 }
