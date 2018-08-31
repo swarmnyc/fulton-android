@@ -16,8 +16,6 @@ class Response {
          * This error is like converting json response data to the given Type to the object fails
          */
         const val ErrorCodeJsonConvertError = -3
-
-        internal val ErrorNetworkUnavailable = Response(ErrorCodeNetworkError, Exception("Network Unavailable"))
     }
 
     constructor(error: Exception) : this("", -1, mapOf(), ByteArray(0), error)

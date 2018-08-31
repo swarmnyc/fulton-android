@@ -416,25 +416,6 @@ class MyApiClient(): ApiClient(MyContext())
 
 ```
 
-## Network State Monitor
-Fulton-Android supports monitoring the networks of the devices, it this feature is enabled. It throws error immediately if network is unavailable.
-
-- to enable network state monitor
-``` kotlin
-Fulton.init(this) {
-    networkStateMonitorEnabled = true
-}
-
-// get the state of network
-Fulton.context.isNetworkAvailable
-```
-
-- to stop network state monitor
-``` kotlin
-// get the state of network
-Fulton.context.stopNetworkStateMonitor()
-```
-
 This feature only supports if the devices is Android 7.0 or above. Also, it stops monitoring if the app go to background and starts monitoring if the app come back to foreground.
 
 ## Direct Use
