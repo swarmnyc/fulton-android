@@ -38,6 +38,7 @@ abstract class IdentityApiClient<T : User>(context: FultonContext = Fulton.conte
 
     open fun googleLogin(code: String): Promise<AccessToken> {
         val p = request<AccessToken> {
+            cacheDurationMs = 0
             paths("google/callback")
             query("code" to code, "noRedirectUrl" to "true")
         }
@@ -49,6 +50,7 @@ abstract class IdentityApiClient<T : User>(context: FultonContext = Fulton.conte
 
     open fun facebookLogin(code: String): Promise<AccessToken> {
         val p = request<AccessToken> {
+            cacheDurationMs = 0
             paths("facebook/callback")
             query("access_token" to code)
         }
@@ -60,6 +62,7 @@ abstract class IdentityApiClient<T : User>(context: FultonContext = Fulton.conte
 
     open fun oauthLogin(provider: String, vararg params: Pair<String, String>): Promise<AccessToken> {
         val p = request<AccessToken> {
+            cacheDurationMs = 0
             paths("$provider/callback")
             query(*params)
         }
@@ -71,6 +74,7 @@ abstract class IdentityApiClient<T : User>(context: FultonContext = Fulton.conte
 
     open fun profile(): Promise<T> {
         val req = Request().apply {
+            cacheDurationMs = 0
             resultType = context.userType
             paths("profile")
         }
@@ -122,6 +126,7 @@ abstract class IdentityApiClient<T : User>(context: FultonContext = Fulton.conte
 
     open fun logout(): Promise<Unit> {
         val p = request<Unit> {
+            cacheDurationMs = 0
             paths("logout")
         }
 

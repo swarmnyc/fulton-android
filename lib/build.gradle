@@ -32,7 +32,7 @@ android {
 // to generate source jar
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
+    classifier = 'source'
 }
 
 artifacts {

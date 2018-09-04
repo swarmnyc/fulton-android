@@ -5,11 +5,9 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.text.format.DateUtils
-import android.util.Log
 import com.swarmnyc.fulton.android.util.Logger
-import com.swarmnyc.fulton.android.util.fromJson
 import com.swarmnyc.fulton.android.util.urlEncode
-import java.lang.reflect.Type
+import java.util.*
 
 /**
  * Use sqlite to store cache
@@ -40,7 +38,7 @@ class SqliteCacheManager(context: Context) : CacheManager {
         db.replace(TableName, null, values)
 
         Logger.Cache.d {
-            "Add Cache for $cls, $url, +$durationMs at $expiredAt"
+            "Add Cache for $cls, $url, +$durationMs at ${Date(expiredAt)}"
         }
     }
 
@@ -55,7 +53,7 @@ class SqliteCacheManager(context: Context) : CacheManager {
                 arrayOf(), null, null, null)
 
         val data = if (cursor.moveToFirst()) {
-            Logger.Cache.d { "Find Cache for $url and timeout: ${cursor.getLong(1) - time}" }
+            Logger.Cache.d { "Find Cache for $url and timeout at ${DateUtils.getRelativeTimeSpanString(cursor.getLong(1))}" }
             cursor.getBlob(0)
         } else {
             Logger.Cache.d { "No Cache for $url" }
