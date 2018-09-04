@@ -7,7 +7,7 @@ import java.util.*
 
 typealias ApiErrorHandler = (error: Throwable) -> Unit
 
-open class HttpError(val request: Request, val response: Response) : Exception(response.error!!.message, response.error!!) {
+open class HttpError(val request: Request, val response: Response) : Exception("Url: ${request.url}, Status: ${response.status}, Caused: ${response.error!!.message}, Body: ${response.dataString}", response.error!!) {
     var status = response.status
 }
 

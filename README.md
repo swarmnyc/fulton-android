@@ -437,7 +437,7 @@ Fulton.request<Foo> {
 Fulton-Android supports a way to mock responses. For example:
 ``` kotlin
 // once requestExecutorMock is not null, ApiClient will use it to execute the request
-Fulton.context.requestExecutorMock = object : RequestExecutor(){
+Fulton.context.requestExecutorMock = object : RequestExecutor {
     override fun execute(req: Request, callback: RequestCallback) {
         when (req.url){
             "https://api.your-domain.com/foo"-> {
@@ -456,7 +456,7 @@ MyApiClient().foo().then {
     // the result from the MockRequestExecutor object
 }
 
-Fulton.context.mockRequestExecutor = null // to cancel mocking
+Fulton.context.requestExecutorMock = null // to cancel mocking
 ```
 
 ## Best Practice 

@@ -5,7 +5,7 @@ package com.swarmnyc.fulton.android.identity
  */
 open class User(
         val id: String,
-        var username: String,
+        var displayName: String,
         var email: String?,
         var registeredAt: String?
 )
