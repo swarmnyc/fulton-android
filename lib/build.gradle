@@ -31,8 +31,9 @@ android {
 
 // to generate source jar
 task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'source'
+    classifier = 'sources'
+    duplicatesStrategy = "exclude"
+    from android.sourceSets.main.java.source
 }
 
 artifacts {
