@@ -36,7 +36,7 @@ dependencies {
 
     //for debug
     implementation project(":lib")
-    implementation 'com.github.swarmnyc.promisekt:promisekt-android:1.0.3'
+    implementation 'com.github.swarmnyc.promisekt:promisekt-android:1.0.4'
     implementation 'com.google.code.gson:gson:2.8.2'
     implementation 'joda-time:joda-time:2.3'
 }
