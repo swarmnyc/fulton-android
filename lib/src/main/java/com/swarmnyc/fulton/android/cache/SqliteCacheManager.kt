@@ -38,7 +38,7 @@ class SqliteCacheManager(context: Context) : CacheManager {
         db.replace(TableName, null, values)
 
         Logger.Cache.d {
-            "Add Cache for $cls, $url, +$durationMs at ${Date(expiredAt)}"
+            "Add Cache for $cls, $url, timeout at ${Date(expiredAt)} (+$durationMs)"
         }
     }
 
@@ -53,7 +53,7 @@ class SqliteCacheManager(context: Context) : CacheManager {
                 arrayOf(), null, null, null)
 
         val data = if (cursor.moveToFirst()) {
-            Logger.Cache.d { "Find Cache for $url and timeout at ${DateUtils.getRelativeTimeSpanString(cursor.getLong(1))}" }
+            Logger.Cache.d { "Find Cache for $url and timeout ${DateUtils.getRelativeTimeSpanString(cursor.getLong(1), time, 0)}" }
             cursor.getBlob(0)
         } else {
             Logger.Cache.d { "No Cache for $url" }
