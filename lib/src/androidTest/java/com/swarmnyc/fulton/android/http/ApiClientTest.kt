@@ -23,7 +23,7 @@ private const val UrlRoot = "http://api.fulton.com"
 @RunWith(AndroidJUnit4::class)
 class ApiClientTest : BaseFultonTest() {
     companion object {
-        val TAG = ApiClientTest::class.java.simpleName!!
+        val TAG = ApiClientTest::class.java.simpleName
     }
 
     @Test

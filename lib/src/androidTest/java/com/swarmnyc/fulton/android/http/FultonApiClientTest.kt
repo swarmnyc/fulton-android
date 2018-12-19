@@ -19,7 +19,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class FultonApiClientTest : BaseFultonTest() {
     companion object {
-        val TAG = FultonApiClientTest::class.java.simpleName!!
+        val TAG = FultonApiClientTest::class.java.simpleName
     }
 
     @Test
