@@ -258,4 +258,58 @@ class RequestTest : BaseFultonTest() {
 
         assertEquals("http://api.fulton.com/?test1=abc&test2=cba&test3=efg", request!!.url)
     }
+
+    @Test
+    fun queryArrayTest() {
+        var request: Request? = null
+        val apiClient = object : ApiClient() {
+            override val urlRoot: String = "http://api.fulton.com/"
+
+            fun test(): Promise<Unit> {
+                return request {
+                    queryParams {
+                        filter {
+                            "\$in" to listOf("A", "B")
+                        }
+                    }
+                }
+            }
+
+            override fun <T> endRequest(promise: Promise<T>, req: Request, res: Response) {
+                request = req
+                super.endRequest(promise, req, res)
+            }
+        }
+
+        apiClient.test().await()
+
+        assertEquals("http://api.fulton.com/?filter[\$in][]=A&filter[\$in][]=B", request!!.url)
+    }
+
+    @Test
+    fun queryEmptyArrayTest() {
+        var request: Request? = null
+        val apiClient = object : ApiClient() {
+            override val urlRoot: String = "http://api.fulton.com/"
+
+            fun test(): Promise<Unit> {
+                return request {
+                    queryParams {
+                        filter {
+                            "\$in" to listOf<String>()
+                        }
+                    }
+                }
+            }
+
+            override fun <T> endRequest(promise: Promise<T>, req: Request, res: Response) {
+                request = req
+                super.endRequest(promise, req, res)
+            }
+        }
+
+        apiClient.test().await()
+
+        assertEquals("http://api.fulton.com/", request!!.url)
+    }
 }

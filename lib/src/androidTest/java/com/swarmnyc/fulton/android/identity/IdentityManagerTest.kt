@@ -16,7 +16,7 @@ class IdentityManagerTest : BaseFultonTest() {
     private val identityManager = IdentityManagerImpl(InstrumentationRegistry.getContext(), FultonInitOptions())
 
     companion object {
-        val TAG = IdentityManagerTest::class.java.simpleName!!
+        val TAG = IdentityManagerTest::class.java.simpleName
     }
 
     @Test

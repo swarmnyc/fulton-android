@@ -269,7 +269,7 @@ class QueryParams {
             }
         }
 
-        return builder.build().query
+        return builder.build().query ?: ""
     }
 
     override fun toString(): String {
